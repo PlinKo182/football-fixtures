@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
-import Game from '@/models/Game';
+import { getLeagueModel } from '@/models/Team';
 import axios from 'axios';
 import { TEAMS, LEAGUE_MAPPINGS } from '@/lib/teams';
 
@@ -35,38 +35,41 @@ async function fetchFixturesFromAPI(leagueEndpoint) {
   }
 }
 
-function isTeamRelevant(homeTeam, awayTeam) {
-  return TEAMS.some(team => 
-    homeTeam.toLowerCase().includes(team.toLowerCase()) ||
-    awayTeam.toLowerCase().includes(team.toLowerCase())
-  );
-}
-
-function parseFixture(match, leagueName) {
+function parseMatchForTeam(match, teamName, leagueName) {
   const homeTeam = match.teams?.home?.name;
   const awayTeam = match.teams?.away?.name;
   
-  // Só processa jogos que envolvem times relevantes
-  if (!homeTeam || !awayTeam || !isTeamRelevant(homeTeam, awayTeam)) {
+  if (!homeTeam || !awayTeam) {
+    return null;
+  }
+
+  // Verificar se o jogo envolve a equipa especificada
+  const isHome = homeTeam === teamName;
+  const isAway = awayTeam === teamName;
+  
+  if (!isHome && !isAway) {
     return null;
   }
 
   // Parse da data/hora - usar o campo time.uts (Unix timestamp)
   let fixtureDate;
   if (match.time?.uts) {
-    fixtureDate = new Date(match.time.uts * 1000); // Converter de segundos para milissegundos
+    fixtureDate = new Date(match.time.uts * 1000);
   } else if (match.time?.date && match.time?.time) {
-    // Fallback: combinar date e time se disponível
     const dateStr = `${match.time.date} ${match.time.time}`;
     fixtureDate = new Date(dateStr);
   } else {
-    fixtureDate = new Date(); // Default para agora se não conseguir parsear
+    fixtureDate = new Date();
   }
   
+  // Determinar o adversário e os resultados
+  const opponent = isHome ? awayTeam : homeTeam;
+  const teamScore = isHome ? match.result?.home : match.result?.away;
+  const opponentScore = isHome ? match.result?.away : match.result?.home;
+  
   return {
-    league: leagueName,
-    homeTeam,
-    awayTeam,
+    opponent,
+    isHome,
     date: fixtureDate,
     time: fixtureDate.toLocaleTimeString('pt-BR', { 
       hour: '2-digit', 
@@ -74,9 +77,9 @@ function parseFixture(match, leagueName) {
     }),
     status: match.status === 'ended' ? 'finished' : 
             match.status === 'live' ? 'live' : 'scheduled',
-    homeScore: match.result?.home || null,
-    awayScore: match.result?.away || null,
-    sportRadarId: match._id
+    teamScore,
+    opponentScore,
+    sportRadarId: match._id?.toString()
   };
 }
 
@@ -98,27 +101,41 @@ export async function GET() {
           const matches = data.doc[0].data.matches;
           console.log(`Encontradas ${matches.length} matches para ${leagueName}`);
           
-          for (const match of matches) {
-            const gameData = parseFixture(match, leagueName);
-            
-            if (gameData) {
-              try {
-                await Game.findOneAndUpdate(
-                  { 
-                    homeTeam: gameData.homeTeam, 
-                    awayTeam: gameData.awayTeam, 
-                    date: gameData.date 
-                  },
-                  gameData,
-                  { upsert: true, new: true }
-                );
-                totalUpdated++;
-              } catch (error) {
-                if (error.code !== 11000) { // Ignora erros de duplicação
-                  console.error('Erro ao salvar jogo:', error);
-                  totalErrors++;
+          const LeagueModel = getLeagueModel(leagueName);
+          const relevantTeams = leagueData.teams;
+          
+          // Processar cada equipa relevante
+          for (const teamName of relevantTeams) {
+            try {
+              const teamGames = [];
+              
+              // Encontrar todos os jogos desta equipa
+              for (const match of matches) {
+                const gameData = parseMatchForTeam(match, teamName, leagueName);
+                if (gameData) {
+                  teamGames.push(gameData);
                 }
               }
+              
+              if (teamGames.length > 0) {
+                // Atualizar ou criar o documento da equipa
+                await LeagueModel.findOneAndUpdate(
+                  { teamName },
+                  { 
+                    teamName,
+                    league: leagueName,
+                    games: teamGames,
+                    lastUpdated: new Date()
+                  },
+                  { upsert: true, new: true }
+                );
+                
+                console.log(`✅ ${teamName}: ${teamGames.length} jogos`);
+                totalUpdated += teamGames.length;
+              }
+            } catch (error) {
+              console.error(`Erro ao salvar dados de ${teamName}:`, error);
+              totalErrors++;
             }
           }
         }
