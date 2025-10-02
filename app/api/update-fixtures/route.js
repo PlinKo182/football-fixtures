@@ -15,7 +15,9 @@ async function fetchFixturesFromAPI(leagueEndpoint) {
   try {
     const headers = {
       'Accept': 'application/json',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
+      'Referer': 'https://www.betano.pt/',
+      'Origin': 'https://www.betano.pt'
     };
 
     const response = await axios.get(
@@ -40,17 +42,26 @@ function isTeamRelevant(homeTeam, awayTeam) {
   );
 }
 
-function parseFixture(fixture, leagueName) {
-  const homeTeam = fixture.home?.name || fixture.home?.abbr || fixture.homeTeam;
-  const awayTeam = fixture.away?.name || fixture.away?.abbr || fixture.awayTeam;
+function parseFixture(match, leagueName) {
+  const homeTeam = match.teams?.home?.name;
+  const awayTeam = match.teams?.away?.name;
   
   // Só processa jogos que envolvem times relevantes
-  if (!isTeamRelevant(homeTeam, awayTeam)) {
+  if (!homeTeam || !awayTeam || !isTeamRelevant(homeTeam, awayTeam)) {
     return null;
   }
 
-  // Parse da data/hora
-  const fixtureDate = new Date(fixture.scheduled || fixture.date);
+  // Parse da data/hora - usar o campo time.uts (Unix timestamp)
+  let fixtureDate;
+  if (match.time?.uts) {
+    fixtureDate = new Date(match.time.uts * 1000); // Converter de segundos para milissegundos
+  } else if (match.time?.date && match.time?.time) {
+    // Fallback: combinar date e time se disponível
+    const dateStr = `${match.time.date} ${match.time.time}`;
+    fixtureDate = new Date(dateStr);
+  } else {
+    fixtureDate = new Date(); // Default para agora se não conseguir parsear
+  }
   
   return {
     league: leagueName,
@@ -61,12 +72,11 @@ function parseFixture(fixture, leagueName) {
       hour: '2-digit', 
       minute: '2-digit' 
     }),
-    status: fixture.status === 'closed' ? 'finished' : 
-            fixture.status === 'live' ? 'live' : 
-            fixture.match_status === 'ended' ? 'finished' : 'scheduled',
-    homeScore: fixture.home_score || fixture.score?.home || null,
-    awayScore: fixture.away_score || fixture.score?.away || null,
-    sportRadarId: fixture.id
+    status: match.status === 'ended' ? 'finished' : 
+            match.status === 'live' ? 'live' : 'scheduled',
+    homeScore: match.result?.home || null,
+    awayScore: match.result?.away || null,
+    sportRadarId: match._id
   };
 }
 
@@ -84,10 +94,12 @@ export async function GET() {
         
         const data = await fetchFixturesFromAPI(leagueData.endpoint);
         
-        if (data && data.doc && data.doc[0] && data.doc[0].data && data.doc[0].data.fixtures) {
-          const fixtures = data.doc[0].data.fixtures;
-          for (const fixture of fixtures) {
-            const gameData = parseFixture(fixture, leagueName);
+        if (data && data.doc && data.doc[0] && data.doc[0].data && data.doc[0].data.matches) {
+          const matches = data.doc[0].data.matches;
+          console.log(`Encontradas ${matches.length} matches para ${leagueName}`);
+          
+          for (const match of matches) {
+            const gameData = parseFixture(match, leagueName);
             
             if (gameData) {
               try {

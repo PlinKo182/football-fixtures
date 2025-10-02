@@ -18,25 +18,16 @@ export default function AutoDataLoader() {
       const response = await fetch('/api/check-data');
       const data = await response.json();
 
-      if (data.hasData) {
+      if (data.hasData || data.finalHasData) {
         setStatus('ready');
         setMessage('Dados disponíveis no banco');
         return;
       }
 
-      // Se não há dados, carrega automaticamente
-      setStatus('loading');
-      setMessage('Carregando dados da API SportRadar...');
-
-      const updateResponse = await fetch('/api/update-fixtures', {
-        method: 'POST'
-      });
-
-      const updateData = await updateResponse.json();
-
-      if (updateData.success) {
+      // Se não há dados, a API check-data já tentou carregar automaticamente
+      if (data.autoLoaded) {
         setStatus('success');
-        setMessage(`Dados carregados com sucesso! ${updateData.stats?.totalUpdated || 0} jogos adicionados.`);
+        setMessage('Dados carregados com sucesso da API SportRadar!');
         
         // Recarrega a página após 3 segundos
         setTimeout(() => {
@@ -44,7 +35,7 @@ export default function AutoDataLoader() {
         }, 3000);
       } else {
         setStatus('error');
-        setMessage('Erro ao carregar dados: ' + updateData.error);
+        setMessage('Erro ao carregar dados: ' + (data.error || 'Falha ao acessar SportRadar'));
       }
 
     } catch (error) {

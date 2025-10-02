@@ -1,53 +1,52 @@
 import { NextResponse } from 'next/server';
-import connectToDatabase from '@/lib/mongodb';
-import Game from '@/models/Game';
+import { checkDatabaseForGames, ensureDataExists } from '@/lib/dataLoader';
 
 // API para verificar se há dados no banco
 export async function GET() {
   try {
-    await connectToDatabase();
+    const hasData = await checkDatabaseForGames();
     
-    const gameCount = await Game.countDocuments();
-    const hasData = gameCount > 0;
-    
-    // Se não há dados, automaticamente tenta carregar
+    // Se não há dados, automaticamente tenta carregar diretamente do SportsRadar
     if (!hasData) {
-      console.log('Base de dados vazia. Iniciando carregamento automático...');
+      console.log('Base de dados vazia. Iniciando carregamento automático do SportsRadar...');
       
       try {
-        // Chama internamente a API de update
-        const updateResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/update-fixtures`, {
-          method: 'POST'
-        });
+        const loadResult = await ensureDataExists();
         
-        if (updateResponse.ok) {
-          const updateData = await updateResponse.json();
+        if (loadResult) {
+          const finalGameCount = await checkDatabaseForGames();
           return NextResponse.json({
             hasData: false,
             autoLoaded: true,
             message: 'Dados carregados automaticamente da API SportRadar',
-            stats: updateData.stats
+            finalHasData: finalGameCount
+          });
+        } else {
+          return NextResponse.json({
+            hasData: false,
+            autoLoaded: false,
+            message: 'Falha ao carregar dados da API SportRadar'
           });
         }
       } catch (autoLoadError) {
         console.error('Erro no carregamento automático:', autoLoadError);
+        return NextResponse.json({
+          hasData: false,
+          autoLoaded: false,
+          error: 'Erro no carregamento automático',
+          details: autoLoadError.message
+        });
       }
     }
     
     return NextResponse.json({
-      hasData,
-      gameCount,
-      message: hasData ? 'Dados disponíveis no banco' : 'Banco vazio - necessário carregar dados'
+      hasData: true,
+      message: 'Dados disponíveis no banco'
     });
     
   } catch (error) {
     console.error('Erro ao verificar dados:', error);
     return NextResponse.json(
-      { 
-        hasData: false, 
-        error: 'Erro ao conectar com o banco de dados',
-        details: error.message 
-      },
       { status: 500 }
     );
   }
