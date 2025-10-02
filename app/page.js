@@ -1,37 +1,53 @@
-import connectToDatabase from '@/lib/mongodb';
-import Game from '@/models/Game';
+import { getAllGames } from '@/lib/dataLoader';
 import { TEAMS } from '@/lib/teams';
 import Link from 'next/link';
 import GameCard from './components/GameCard';
 import AutoDataLoader from './components/AutoDataLoader';
 
-async function checkAndLoadData() {
-  try {
-    await connectToDatabase();
-    const gameCount = await Game.countDocuments();
-    return { hasData: gameCount > 0, gameCount };
-  } catch (error) {
-    console.error('Erro ao verificar dados:', error);
-    return { hasData: false, gameCount: 0 };
-  }
-}
-
 async function getUpcomingGames() {
   try {
-    await connectToDatabase();
-    const upcomingGames = await Game.find({
-      date: { '': new Date() },
-      status: { '': ['scheduled', 'live'] }
-    })
-    .sort({ date: 1 })
-    .limit(10)
-    .lean();
+    const allGames = await getAllGames();
+    const upcomingGames = [];
 
-    return upcomingGames.map(game => ({
-      ...game,
-      _id: game._id.toString(),
-      date: game.date.toISOString(),
-    }));
+    // Iterar por todas as ligas e equipas
+    Object.values(allGames).forEach(teams => {
+      teams.forEach(team => {
+        team.games.forEach(game => {
+          const gameDate = new Date(game.date);
+          if (gameDate > new Date() && game.status !== 'finished') {
+            upcomingGames.push({
+              _id: `${team.teamName}-${game.sportRadarId}`,
+              league: team.league || 'La Liga',
+              homeTeam: game.isHome ? team.teamName : game.opponent,
+              awayTeam: game.isHome ? game.opponent : team.teamName,
+              date: game.date,
+              time: game.time,
+              status: game.status,
+              homeScore: game.isHome ? game.teamScore : game.opponentScore,
+              awayScore: game.isHome ? game.opponentScore : game.teamScore
+            });
+          }
+        });
+      });
+    });
+
+    // Remover duplicatas (mesmo jogo aparece para ambas as equipas)
+    const uniqueGames = upcomingGames.filter((game, index, self) => 
+      index === self.findIndex(g => 
+        g.homeTeam === game.homeTeam && 
+        g.awayTeam === game.awayTeam && 
+        new Date(g.date).getTime() === new Date(game.date).getTime()
+      )
+    );
+
+    // Ordenar por data e limitar a 10
+    return uniqueGames
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .slice(0, 10)
+      .map(game => ({
+        ...game,
+        date: new Date(game.date).toISOString(),
+      }));
   } catch (error) {
     console.error('Erro ao buscar jogos:', error);
     return [];
@@ -39,8 +55,8 @@ async function getUpcomingGames() {
 }
 
 export default async function Home() {
-  const dataStatus = await checkAndLoadData();
   const upcomingGames = await getUpcomingGames();
+  const hasData = upcomingGames.length > 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -54,7 +70,7 @@ export default async function Home() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {!dataStatus.hasData && (
+        {!hasData && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-8">
             <h3 className="text-sm font-medium text-yellow-800">Base de dados vazia</h3>
             <p className="mt-1 text-sm text-yellow-700">O sistema irá carregar automaticamente os dados da API SportRadar</p>

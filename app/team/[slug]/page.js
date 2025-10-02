@@ -1,6 +1,5 @@
-import connectToDatabase from '@/lib/mongodb';
-import Game from '@/models/Game';
-import { TEAMS } from '@/lib/teams';
+import { getAllGames } from '@/lib/dataLoader';
+import { TEAMS, getLeagueByTeam } from '@/lib/teams';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import GameCard from '@/app/components/GameCard';
@@ -8,23 +7,33 @@ import GameCard from '@/app/components/GameCard';
 // Função para buscar jogos de um time específico
 async function getTeamGames(teamName) {
   try {
-    await connectToDatabase();
+    const allGames = await getAllGames();
     
-    const games = await Game.find({
-      $or: [
-        { homeTeam: { $regex: teamName, $options: 'i' } },
-        { awayTeam: { $regex: teamName, $options: 'i' } }
-      ]
-    })
-    .sort({ date: -1 })
-    .limit(20)
-    .lean();
+    // Encontrar a liga da equipa
+    let teamData = null;
+    Object.values(allGames).forEach(teams => {
+      const found = teams.find(team => team.teamName === teamName);
+      if (found) {
+        teamData = found;
+      }
+    });
 
-    return games.map(game => ({
-      ...game,
-      _id: game._id.toString(),
-      date: game.date.toISOString(),
-    }));
+    if (!teamData) {
+      return [];
+    }
+
+    // Converter jogos para o formato esperado
+    return teamData.games.map(game => ({
+      _id: `${teamName}-${game.sportRadarId}`,
+      league: teamData.league || 'La Liga',
+      homeTeam: game.isHome ? teamName : game.opponent,
+      awayTeam: game.isHome ? game.opponent : teamName,
+      date: new Date(game.date).toISOString(),
+      time: game.time,
+      status: game.status,
+      homeScore: game.isHome ? game.teamScore : game.opponentScore,
+      awayScore: game.isHome ? game.opponentScore : game.teamScore
+    })).sort((a, b) => new Date(b.date) - new Date(a.date));
   } catch (error) {
     console.error('Erro ao buscar jogos do time:', error);
     return [];
