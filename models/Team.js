@@ -33,7 +33,6 @@ const GameSchema = new mongoose.Schema({
   },
   sportRadarId: {
     type: String,
-    unique: true,
     sparse: true
   }
 }, {
