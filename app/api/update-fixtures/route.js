@@ -4,23 +4,31 @@ import Game from '@/models/Game';
 import axios from 'axios';
 import { TEAMS, LEAGUE_MAPPINGS } from '@/lib/teams';
 
-const SPORTRADAR_API_KEY = process.env.SPORTRADAR_API_KEY;
-const SPORTRADAR_BASE_URL = 'https://api.sportradar.com/soccer-extended/trial/v4/pt';
+const BASE_URL = "https://stats.fn.sportradar.com/betano/pt/Europe:London/gismo/";
+const LEAGUE_ENDPOINTS = {
+  "La Liga": "stats_season_fixtures2/130805",
+  "Ligue 1": "stats_season_fixtures2/131609",
+  "Premier League": "stats_season_fixtures2/130281"
+};
 
-async function fetchFixturesFromSportRadar(leagueId) {
-  if (!SPORTRADAR_API_KEY) {
-    throw new Error('SPORTRADAR_API_KEY não configurada');
-  }
-
+async function fetchFixturesFromAPI(leagueEndpoint) {
   try {
+    const headers = {
+      'Accept': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    };
+
     const response = await axios.get(
-      `${SPORTRADAR_BASE_URL}/seasons/${leagueId}/fixtures.json?api_key=${SPORTRADAR_API_KEY}`,
-      { timeout: 10000 }
+      `${BASE_URL}${leagueEndpoint}`,
+      { 
+        headers,
+        timeout: 15000 
+      }
     );
     
     return response.data;
   } catch (error) {
-    console.error('Erro ao buscar fixtures do SportRadar:', error.message);
+    console.error('Erro ao buscar fixtures da API:', error.message);
     throw error;
   }
 }
@@ -33,27 +41,31 @@ function isTeamRelevant(homeTeam, awayTeam) {
 }
 
 function parseFixture(fixture, leagueName) {
-  const homeTeam = fixture.home_team?.name || fixture.homeTeam;
-  const awayTeam = fixture.away_team?.name || fixture.awayTeam;
+  const homeTeam = fixture.home?.name || fixture.home?.abbr || fixture.homeTeam;
+  const awayTeam = fixture.away?.name || fixture.away?.abbr || fixture.awayTeam;
   
   // Só processa jogos que envolvem times relevantes
   if (!isTeamRelevant(homeTeam, awayTeam)) {
     return null;
   }
 
+  // Parse da data/hora
+  const fixtureDate = new Date(fixture.scheduled || fixture.date);
+  
   return {
     league: leagueName,
     homeTeam,
     awayTeam,
-    date: new Date(fixture.scheduled),
-    time: new Date(fixture.scheduled).toLocaleTimeString('pt-BR', { 
+    date: fixtureDate,
+    time: fixtureDate.toLocaleTimeString('pt-BR', { 
       hour: '2-digit', 
       minute: '2-digit' 
     }),
     status: fixture.status === 'closed' ? 'finished' : 
-            fixture.status === 'live' ? 'live' : 'scheduled',
-    homeScore: fixture.home_score || null,
-    awayScore: fixture.away_score || null,
+            fixture.status === 'live' ? 'live' : 
+            fixture.match_status === 'ended' ? 'finished' : 'scheduled',
+    homeScore: fixture.home_score || fixture.score?.home || null,
+    awayScore: fixture.away_score || fixture.score?.away || null,
     sportRadarId: fixture.id
   };
 }
@@ -70,10 +82,11 @@ export async function GET() {
       try {
         console.log(`Buscando fixtures para ${leagueName}...`);
         
-        const data = await fetchFixturesFromSportRadar(leagueData.sportRadarId);
+        const data = await fetchFixturesFromAPI(leagueData.endpoint);
         
-        if (data.fixtures && Array.isArray(data.fixtures)) {
-          for (const fixture of data.fixtures) {
+        if (data && data.doc && data.doc[0] && data.doc[0].data && data.doc[0].data.fixtures) {
+          const fixtures = data.doc[0].data.fixtures;
+          for (const fixture of fixtures) {
             const gameData = parseFixture(fixture, leagueName);
             
             if (gameData) {
