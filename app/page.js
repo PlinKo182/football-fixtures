@@ -98,7 +98,7 @@ export default async function Home() {
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-gray-600">{!dataStatus.hasData ? 'Carregando dados...' : 'Nenhum jogo agendado encontrado.'}</p>
+              <p className="text-gray-600">{!hasData ? 'Carregando dados...' : 'Nenhum jogo agendado encontrado.'}</p>
             </div>
           )}
         </section>
