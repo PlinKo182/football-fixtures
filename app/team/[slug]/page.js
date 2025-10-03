@@ -1,4 +1,4 @@
-import { getTeamGamesOptimized } from '@/lib/teamLoader';
+import { getTeamGamesWithHistory } from '@/lib/teamLoader';
 import { TEAMS } from '@/lib/teams';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -20,13 +20,13 @@ export default async function TeamPage({ params }) {
     notFound();
   }
 
-  const teamData = await getTeamGamesOptimized(teamName);
+  const teamData = await getTeamGamesWithHistory(teamName, true);
   
   if (!teamData) {
     notFound();
   }
 
-  // Converter para formato esperado (mínimo necessário)
+  // Converter para formato esperado (mínimo necessário) incluindo época
   const games = teamData.games.map(game => ({
     _id: `${teamName}-${game.sportRadarId || Math.random()}`,
     league: teamData.league,
@@ -35,11 +35,16 @@ export default async function TeamPage({ params }) {
     date: game.date,
     status: game.status,
     homeScore: game.isHome ? game.teamScore : game.opponentScore,
-    awayScore: game.isHome ? game.opponentScore : game.teamScore
+    awayScore: game.isHome ? game.opponentScore : game.teamScore,
+    season: game.season || '2025-26' // Fallback para época atual
   }));
 
-  // Calcular jogos próximos para o header
-  const upcomingGames = games.filter(game => new Date(game.date) >= new Date());
+  // Separar jogos por época
+  const currentSeasonGames = games.filter(game => game.season === '2025-26');
+  const historicalGames = games.filter(game => game.season === '2024-25');
+  
+  // Calcular jogos próximos para o header (apenas época atual)
+  const upcomingGames = currentSeasonGames.filter(game => new Date(game.date) >= new Date());
 
   return (
     <div className="min-h-screen dark:bg-slate-900">
@@ -53,9 +58,17 @@ export default async function TeamPage({ params }) {
               </div>
               <div>
                 <h1 className="text-4xl font-bold text-white">{teamName}</h1>
-                <p className="text-blue-100 text-lg">
-                  {games.length} jogos • {upcomingGames.length} próximos
-                </p>
+                <div className="text-blue-100 text-lg space-y-1">
+                  <p>
+                    {games.length} jogos total • {upcomingGames.length} próximos
+                  </p>
+                  {teamData.seasons && teamData.seasons.length > 1 && (
+                    <p className="text-sm text-blue-200">
+                      📊 2025/26: {currentSeasonGames.length} jogos • 
+                      📈 2024/25: {historicalGames.length} jogos
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
             <Link
@@ -78,7 +91,14 @@ export default async function TeamPage({ params }) {
             <div className="flex items-center mb-4">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mr-3">⚽ Todos os Jogos</h2>
               <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
-              <span className="ml-3 text-sm text-gray-500 dark:text-gray-400">{games.length} jogos</span>
+              <div className="ml-3 text-sm text-gray-500 dark:text-gray-400 space-x-3">
+                <span>{games.length} jogos total</span>
+                {historicalGames.length > 0 && (
+                  <span className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-2 py-1 rounded">
+                    Inclui {historicalGames.length} jogos de 2024/25
+                  </span>
+                )}
+              </div>
             </div>
             
             <div className="bg-white dark:bg-slate-800 rounded-lg border border-gray-100 dark:border-slate-700 overflow-hidden">

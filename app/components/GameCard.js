@@ -25,7 +25,14 @@ export default function GameCard({ game, isRecent = false, highlightTeam = null,
       <div className="px-4 py-2 flex items-center text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
         {/* Data e Hora numa só coluna */}
         <div className="w-24 text-xs text-gray-600 dark:text-gray-400">
-          <div>{formattedDate}</div>
+          <div className="flex items-center gap-1">
+            {formattedDate}
+            {game.season === '2024-25' && (
+              <span className="bg-orange-200 dark:bg-orange-800 text-orange-800 dark:text-orange-200 px-1 rounded text-[10px] font-semibold">
+                24/25
+              </span>
+            )}
+          </div>
           <div className="font-mono">{formattedTime}</div>
         </div>
         
