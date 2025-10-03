@@ -53,34 +53,22 @@ export default async function TeamPage({ params }) {
 
   return (
     <div className="min-h-screen dark:bg-slate-900">
-      {/* Header moderno */}
-      <header className="header-gradient shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/30">
-                <span className="text-white text-xl">⚽</span>
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold text-white">{teamName}</h1>
-                <div className="text-blue-100 text-lg space-y-1">
-                  <p>
-                    {games.length} jogos total • {upcomingGames.length} próximos
-                  </p>
-                  {teamData.seasons && teamData.seasons.length > 1 && (
-                    <p className="text-sm text-blue-200">
-                      📊 2025/26: {currentSeasonGames.length} jogos • 
-                      📈 2024/25: {historicalGames.length} jogos
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
+      {/* Minimal header (aligned with main page) */}
+      <header className="mb-6">
+        <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-between">
+          <div>
+            <h1 className="ff-h1 text-ff-title">⚽ {teamName}</h1>
+            <p className="ff-lead text-ff-subtitle">{games.length} jogos total • {upcomingGames.length} próximos</p>
+            {teamData.seasons && teamData.seasons.length > 1 && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">📊 2025/26: {currentSeasonGames.length} • 2024/25: {historicalGames.length}</p>
+            )}
+          </div>
+          <div className="hidden md:flex items-center gap-4">
             <Link
               href="/"
-              className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-xl transition-all duration-200 border border-white/30 flex items-center gap-2"
+              className="ff-card px-4 py-2 flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-gray-700 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
               Voltar
@@ -107,13 +95,13 @@ export default async function TeamPage({ params }) {
             </div>
             
             <div className="bg-white dark:bg-slate-800 rounded-lg border border-gray-100 dark:border-slate-700 overflow-hidden">
-              {/* Header compacto */}
-              <div className="bg-gray-50 dark:bg-slate-700 px-4 py-2 border-b border-gray-100 dark:border-slate-600">
-                <div className="flex items-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wide">
+              {/* Header compacto (aligned with main list) */}
+              <div className="px-6 py-3 border-b border-gray-100 dark:border-slate-600">
+                <div className="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wide">
                   <div className="w-24">Data/Hora</div>
-                  <div className="flex-1 text-right pr-2">Casa</div>
+                  <div className="flex-1 text-right pr-4">Casa</div>
                   <div className="w-12 text-center">vs</div>
-                  <div className="flex-1 text-left pl-2">Fora</div>
+                  <div className="flex-1 text-left pl-4">Fora</div>
                   <div className="w-16 text-center">Status</div>
                 </div>
               </div>

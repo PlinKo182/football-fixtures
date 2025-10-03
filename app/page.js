@@ -82,20 +82,18 @@ export default async function Home() {
   return (
     <div className="min-h-screen dark:bg-slate-900">
       <AutoDataLoader />
-      
-      {/* Header moderno com gradiente */}
-      <header className="header-gradient shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold text-white mb-2">⚽ Football Fixtures</h1>
-              <p className="text-blue-100 text-lg">Acompanhe os jogos dos seus times favoritos • Atualizado</p>
-            </div>
-            <div className="hidden md:block">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3 border border-white/20">
-                <p className="text-white/90 text-sm font-medium">Próximos jogos</p>
-                <p className="text-white text-2xl font-bold">{upcomingGames.length}</p>
-              </div>
+
+      {/* Simplified minimal header */}
+      <header className="mb-6">
+        <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-100">Football Fixtures</h1>
+            <p className="mt-1 text-sm text-muted">Próximos jogos • Atualizado automaticamente</p>
+          </div>
+          <div className="hidden md:flex items-center gap-4">
+            <div className="ff-card px-6 py-3 flex flex-col items-center" style={{background: 'linear-gradient(90deg, rgba(255,255,255,0.8), rgba(255,255,255,0.6))'}}>
+              <span className="text-xs text-muted">Próximos jogos</span>
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">{upcomingGames.length}</span>
             </div>
           </div>
         </div>
@@ -131,7 +129,7 @@ export default async function Home() {
         {/* Secção de próximos jogos */}
         <section className="mb-12">
           <div className="flex items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mr-4">📅 Próximos Jogos</h2>
+            <h2 className="text-2xl font-semibold text-gray-100 mr-4">Próximos jogos</h2>
             <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
             {upcomingGames.length > 0 && (
               <span className="ml-4 text-sm text-gray-500 dark:text-gray-400">{upcomingGames.length} jogos</span>
@@ -141,14 +139,15 @@ export default async function Home() {
           {upcomingGames.length > 0 ? (
             <div className="bg-white dark:bg-slate-800 rounded-lg border border-gray-100 dark:border-slate-700 overflow-hidden">
               {/* Header da "tabela" */}
-              <div className="bg-gray-50 dark:bg-slate-700 px-6 py-3 border-b border-gray-100 dark:border-slate-600">
-                <div className="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wide">
-                  <div className="w-28 text-center">Equipa</div>
-                  <div className="w-28 text-center ml-4">Data</div>
-                  <div className="flex-1 text-right pr-4">Casa</div>
-                  <div className="w-16 text-center"></div>
-                  <div className="flex-1 text-left pl-4">Fora</div>
-                  <div className="w-16 text-right">Status</div>
+              <div className="table-header px-6 py-3">
+                <div className="flex items-center justify-between text-sm font-medium text-gray-400 dark:text-gray-300">
+                  <div className="w-32 text-left ff-smallcaps col">Equipa</div>
+                  <div className="w-20 flex items-center justify-center md:ml-12 ml-4 col">Data</div>
+                  <div className="w-14 flex items-center justify-center col">Hora</div>
+                  <div className="flex-1 text-right pr-4 col">Casa</div>
+                  <div className="w-16 text-center col"></div>
+                  <div className="flex-1 text-left pl-4 col">Fora</div>
+                  <div className="w-16 text-right col">Status</div>
                 </div>
               </div>
               
