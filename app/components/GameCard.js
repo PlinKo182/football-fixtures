@@ -64,10 +64,13 @@ export default function GameCard({ game, isRecent = false, highlightTeam = null 
               ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
             game.status === 'finished' 
               ? 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300' :
+            game.status === 'postponed' 
+              ? 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
               'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400'
           }`}>
             {game.status === 'live' ? 'LIVE' :
-             game.status === 'finished' ? 'FIM' : 'AGD'}
+             game.status === 'finished' ? 'FIM' : 
+             game.status === 'postponed' ? 'ADI' : 'AGD'}
           </span>
         </div>
 
