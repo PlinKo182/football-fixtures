@@ -22,15 +22,6 @@ async function getUpcomingGames() {
     // Iterar por todas as ligas e equipas
     Object.entries(allGames).forEach(([leagueName, teams]) => {
       teams.forEach(team => {
-        // Debug específico para Bétis
-        if (team.teamName === 'Bétis') {
-          console.log(`🔍 DEBUG BÉTIS: Liga=${leagueName}, Jogos=${team.games.length}`);
-          team.games.forEach(game => {
-            const gameDate = new Date(game.date);
-            console.log(`   Jogo: ${game.date} vs ${game.opponent} (${gameDate > now ? 'futuro' : 'passado'})`);
-          });
-        }
-        
         team.games.forEach(game => {
           const gameDate = new Date(game.date);
           const fourteenDaysLater = new Date(now.getTime() + (14 * 24 * 60 * 60 * 1000));
@@ -41,11 +32,6 @@ async function getUpcomingGames() {
               addedGames.add(uniqueId);
               const homeTeam = game.isHome ? team.teamName : game.opponent;
               const awayTeam = game.isHome ? game.opponent : team.teamName;
-              
-              // Debug específico para jogos do Bétis
-              if (team.teamName === 'Bétis') {
-                console.log(`🎯 DEBUG BÉTIS - Jogo adicionado: ${homeTeam} vs ${awayTeam} em ${game.date}`);
-              }
               
               upcomingGames.push({
                 id: uniqueId,
