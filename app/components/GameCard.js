@@ -43,9 +43,9 @@ export default function GameCard({ game, isRecent = false, highlightTeam = null,
         
         {/* VS ou Resultado */}
         <div className="w-12 text-center">
-          {(game.status === 'finished' && (game.homeScore !== null || game.teamScore !== null)) ? (
+          {(game.homeScore !== null && game.awayScore !== null) ? (
             <span className="text-xs font-mono bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-800 px-1 py-0.5 rounded font-semibold">
-              {game.homeScore ?? (game.isHome ? game.teamScore : game.opponentScore) ?? 'X'}-{game.awayScore ?? (game.isHome ? game.opponentScore : game.teamScore) ?? 'X'}
+              {game.homeScore}-{game.awayScore}
             </span>
           ) : (
             <span className="text-gray-400 text-xs">vs</span>
