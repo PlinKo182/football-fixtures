@@ -43,7 +43,7 @@ export default function GameCard({ game, isRecent = false, highlightTeam = null,
         
         {/* VS ou Resultado */}
         <div className="w-12 text-center">
-          {isRecent && (game.homeScore !== null && game.awayScore !== null) ? (
+          {(game.status === 'finished' || (game.homeScore !== null && game.awayScore !== null)) ? (
             <span className="text-xs font-mono bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-800 px-1 py-0.5 rounded font-semibold">
               {game.homeScore}-{game.awayScore}
             </span>
@@ -61,7 +61,7 @@ export default function GameCard({ game, isRecent = false, highlightTeam = null,
         <div className="w-16 text-center">
           {game.status === 'postponed' ? (
             <span className="w-8 h-5 bg-yellow-500 text-white text-xs font-bold rounded-sm flex items-center justify-center">ADI</span>
-          ) : game.status === 'finished' || (isRecent && game.homeScore !== null && game.awayScore !== null) ? (
+          ) : game.status === 'finished' || (game.homeScore !== null && game.awayScore !== null) ? (
             <span className="w-8 h-5 bg-green-500 text-white text-xs font-bold rounded-sm flex items-center justify-center">FIM</span>
           ) : game.status === 'live' ? (
             <span className="w-8 h-5 bg-red-500 text-white text-xs font-bold rounded-sm flex items-center justify-center">LIVE</span>
