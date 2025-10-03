@@ -1,44 +1,8 @@
-import { getAllGames } from '@/lib/dataLoader';
-import { TEAMS, getLeagueByTeam } from '@/lib/teams';
+import { getTeamGamesOptimized } from '@/lib/teamLoader';
+import { TEAMS } from '@/lib/teams';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import GameCard from '@/app/components/GameCard';
-
-// Função para buscar jogos de um time específico
-async function getTeamGames(teamName) {
-  try {
-    const allGames = await getAllGames();
-    
-    // Encontrar a liga da equipa
-    let teamData = null;
-    Object.values(allGames).forEach(teams => {
-      const found = teams.find(team => team.teamName === teamName);
-      if (found) {
-        teamData = found;
-      }
-    });
-
-    if (!teamData) {
-      return [];
-    }
-
-    // Converter jogos para o formato esperado
-    return teamData.games.map(game => ({
-      _id: `${teamName}-${game.sportRadarId}`,
-      league: teamData.league || 'La Liga',
-      homeTeam: game.isHome ? teamName : game.opponent,
-      awayTeam: game.isHome ? game.opponent : teamName,
-      date: new Date(game.date).toISOString(),
-      time: game.time,
-      status: game.status,
-      homeScore: game.isHome ? game.teamScore : game.opponentScore,
-      awayScore: game.isHome ? game.opponentScore : game.teamScore
-    })).sort((a, b) => new Date(b.date) - new Date(a.date));
-  } catch (error) {
-    console.error('Erro ao buscar jogos do time:', error);
-    return [];
-  }
-}
 
 // Remover generateStaticParams para permitir rotas dinâmicas
 // export async function generateStaticParams() {
@@ -56,9 +20,23 @@ export default async function TeamPage({ params }) {
     notFound();
   }
 
-  const games = await getTeamGames(teamName);
-  const upcomingGames = games.filter(game => new Date(game.date) >= new Date());
-  const pastGames = games.filter(game => new Date(game.date) < new Date());
+  const teamData = await getTeamGamesOptimized(teamName);
+  
+  if (!teamData) {
+    notFound();
+  }
+
+  // Converter para formato esperado (mínimo necessário)
+  const games = teamData.games.map(game => ({
+    _id: `${teamName}-${game.sportRadarId || Math.random()}`,
+    league: teamData.league,
+    homeTeam: game.isHome ? teamName : game.opponent,
+    awayTeam: game.isHome ? game.opponent : teamName,
+    date: game.date,
+    status: game.status,
+    homeScore: game.isHome ? game.teamScore : game.opponentScore,
+    awayScore: game.isHome ? game.opponentScore : game.teamScore
+  }));
 
   return (
     <div className="min-h-screen dark:bg-slate-900">
