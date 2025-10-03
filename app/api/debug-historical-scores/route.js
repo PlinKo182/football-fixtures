@@ -18,6 +18,10 @@ export async function GET() {
       console.log(`   Status: ${game.status}`);
       console.log(`   teamScore: ${game.teamScore}`);
       console.log(`   opponentScore: ${game.opponentScore}`);
+      console.log(`   homeScore: ${game.homeScore}`);
+      console.log(`   awayScore: ${game.awayScore}`);
+      console.log(`   homeTeam: ${game.homeTeam}`);
+      console.log(`   awayTeam: ${game.awayTeam}`);
       console.log(`   isHome: ${game.isHome}`);
     });
 
@@ -30,6 +34,10 @@ export async function GET() {
         status: game.status,
         teamScore: game.teamScore,
         opponentScore: game.opponentScore,
+        homeScore: game.homeScore,
+        awayScore: game.awayScore,
+        homeTeam: game.homeTeam,
+        awayTeam: game.awayTeam,
         isHome: game.isHome
       }))
     });

@@ -1,6 +1,18 @@
 import Link from 'next/link';
 
 export default function GameCard({ game, isRecent = false, highlightTeam = null, isCompact = false }) {
+  // Debug: Log dos dados do jogo (apenas se for histórico)
+  if (game.season === '2024-25') {
+    console.log('🎮 GameCard histórico:', {
+      homeTeam: game.homeTeam,
+      awayTeam: game.awayTeam,
+      homeScore: game.homeScore,
+      awayScore: game.awayScore,
+      status: game.status,
+      season: game.season
+    });
+  }
+
   const gameDate = new Date(game.date);
   
   // Formato manual para garantir "05 out 25"
@@ -43,9 +55,9 @@ export default function GameCard({ game, isRecent = false, highlightTeam = null,
         
         {/* VS ou Resultado */}
         <div className="w-12 text-center">
-          {(game.status === 'finished' || (game.homeScore !== null && game.awayScore !== null)) ? (
+          {(game.status === 'finished' && (game.homeScore !== null || game.teamScore !== null)) ? (
             <span className="text-xs font-mono bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-800 px-1 py-0.5 rounded font-semibold">
-              {game.homeScore}-{game.awayScore}
+              {game.homeScore ?? (game.isHome ? game.teamScore : game.opponentScore) ?? 'X'}-{game.awayScore ?? (game.isHome ? game.opponentScore : game.teamScore) ?? 'X'}
             </span>
           ) : (
             <span className="text-gray-400 text-xs">vs</span>
@@ -61,7 +73,7 @@ export default function GameCard({ game, isRecent = false, highlightTeam = null,
         <div className="w-16 text-center">
           {game.status === 'postponed' ? (
             <span className="w-8 h-5 bg-yellow-500 text-white text-xs font-bold rounded-sm flex items-center justify-center">ADI</span>
-          ) : game.status === 'finished' || (game.homeScore !== null && game.awayScore !== null) ? (
+          ) : game.status === 'finished' ? (
             <span className="w-8 h-5 bg-green-500 text-white text-xs font-bold rounded-sm flex items-center justify-center">FIM</span>
           ) : game.status === 'live' ? (
             <span className="w-8 h-5 bg-red-500 text-white text-xs font-bold rounded-sm flex items-center justify-center">LIVE</span>
