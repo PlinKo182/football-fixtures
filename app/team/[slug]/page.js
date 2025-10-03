@@ -3,8 +3,9 @@ import { TEAMS } from '@/lib/teams';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import GameCard from '@/app/components/GameCard';
+import ThemeToggle from '@/app/components/ThemeToggle';
 
-// Remover generateStaticParams para permitir rotas dinâmicas
+// Remove generateStaticParams to allow dynamic routes
 // export async function generateStaticParams() {
 //   return TEAMS.map((team) => ({
 //     slug: encodeURIComponent(team),
@@ -15,7 +16,7 @@ export default async function TeamPage({ params }) {
   const resolvedParams = await params;
   const teamName = decodeURIComponent(resolvedParams.slug);
   
-  // Verifica se o time existe na lista
+  // Check if the team exists in the list
   if (!TEAMS.includes(teamName)) {
     notFound();
   }
@@ -26,7 +27,7 @@ export default async function TeamPage({ params }) {
     notFound();
   }
 
-  // Converter para formato esperado (mínimo necessário) incluindo época
+  // Convert to expected format (minimum necessary) including season
   const games = teamData.games.map(game => ({
     _id: `${teamName}-${game.sportRadarId || Math.random()}`,
     league: teamData.league,
@@ -34,103 +35,139 @@ export default async function TeamPage({ params }) {
     awayTeam: game.awayTeam || (game.isHome ? game.opponent : teamName),
     date: game.date,
     status: game.status,
-    // Usar homeScore/awayScore diretamente se existirem, senão mapear de teamScore/opponentScore
+    // Use homeScore/awayScore directly if they exist, otherwise map from teamScore/opponentScore
     homeScore: game.homeScore !== null && game.homeScore !== undefined ? 
                game.homeScore : 
                (game.isHome ? game.teamScore : game.opponentScore),
     awayScore: game.awayScore !== null && game.awayScore !== undefined ? 
                game.awayScore : 
                (game.isHome ? game.opponentScore : game.teamScore),
-    season: game.season || '2025-26' // Fallback para época atual
+    season: game.season || '2025-26' // Fallback to current season
   }));
 
-  // Separar jogos por época
+  // Separate games by season
   const currentSeasonGames = games.filter(game => game.season === '2025-26');
   const historicalGames = games.filter(game => game.season === '2024-25');
   
-  // Calcular jogos próximos para o header (apenas época atual)
+  // Calculate upcoming games for header (current season only)
   const upcomingGames = currentSeasonGames.filter(game => new Date(game.date) >= new Date());
 
   return (
-    <div className="min-h-screen dark:bg-slate-900">
-      {/* Minimal header (aligned with main page) */}
-      <header className="mb-6">
-        <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-between">
+    <div style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
+      {/* Compact header */}
+      <header className="header-compact">
+        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <h1 className="ff-h1 text-ff-title">⚽ {teamName}</h1>
-            <p className="ff-lead text-ff-subtitle">{games.length} jogos total • {upcomingGames.length} próximos</p>
+            <h1 className="page-title-compact">{teamName}</h1>
+            <p className="page-subtitle-compact">{games.length} total games • {upcomingGames.length} upcoming</p>
             {teamData.seasons && teamData.seasons.length > 1 && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">📊 2025/26: {currentSeasonGames.length} • 2024/25: {historicalGames.length}</p>
+              <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
+                📊 2025/26: {currentSeasonGames.length} • 2024/25: {historicalGames.length}
+              </p>
             )}
           </div>
-          <div className="hidden md:flex items-center gap-4">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <ThemeToggle />
             <Link
               href="/"
-              className="ff-card px-4 py-2 flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200"
+              className="btn-secondary"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', padding: '8px 16px' }}
             >
-              <svg className="w-4 h-4 text-gray-700 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              Voltar
+              Back
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Todos os Jogos numa única tabela */}
+      <main className="container">
+        {/* All games section */}
         {games.length > 0 && (
-          <section>
-            <div className="flex items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mr-3">⚽ Todos os Jogos</h2>
-              <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
-              <div className="ml-3 text-sm text-gray-500 dark:text-gray-400 space-x-3">
-                <span>{games.length} jogos total</span>
+          <div className="matches-container">
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between', 
+              marginBottom: '24px'
+            }}>
+              <h2 className="section-title">All Games</h2>
+              <div style={{ 
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                fontSize: '14px',
+                color: 'var(--color-text-secondary)'
+              }}>
+                <span>{games.length} games</span>
                 {historicalGames.length > 0 && (
-                  <span className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-2 py-1 rounded">
-                    Inclui {historicalGames.length} jogos de 2024/25
+                  <span style={{ 
+                    background: 'var(--color-warning-light)',
+                    color: 'var(--color-warning-dark)',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: '500'
+                  }}>
+                    +{historicalGames.length} historical
                   </span>
                 )}
               </div>
             </div>
             
-            <div className="bg-white dark:bg-slate-800 rounded-lg border border-gray-100 dark:border-slate-700 overflow-hidden">
-              {/* Header compacto (aligned with main list) */}
-              <div className="px-6 py-3 border-b border-gray-100 dark:border-slate-600">
-                <div className="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wide">
-                  <div className="w-24">Data/Hora</div>
-                  <div className="flex-1 text-right pr-4">Casa</div>
-                  <div className="w-12 text-center">vs</div>
-                  <div className="flex-1 text-left pl-4">Fora</div>
-                  <div className="w-16 text-center">Status</div>
-                </div>
-              </div>
-              
-              {/* Lista de jogos compacta */}
-              <div className="divide-y divide-gray-50 dark:divide-slate-700">
-                {games.map((game, index) => (
-                  <GameCard key={game._id} game={game} isRecent={new Date(game.date) < new Date()} isCompact={true} />
-                ))}
-              </div>
+            {/* Games list */}
+            <div>
+              {games.map((game, index) => (
+                <GameCard key={game._id} game={game} isRecent={new Date(game.date) < new Date()} />
+              ))}
             </div>
-          </section>
+          </div>
         )}
 
-        {/* Mensagem quando não há jogos */}
+        {/* Empty state */}
         {games.length === 0 && (
-          <div className="text-center py-16">
-            <div className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-700 dark:to-slate-800 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-              <svg className="w-10 h-10 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
+          <div className="matches-container">
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '60px 20px',
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-border-light)',
+              borderRadius: '8px'
+            }}>
+              <div style={{
+                background: 'var(--color-surface)',
+                borderRadius: '50%',
+                width: '60px',
+                height: '60px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 24px',
+                border: '1px solid var(--color-border)'
+              }}>
+                <svg style={{ width: '32px', height: '32px', color: 'var(--color-text-secondary)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              </div>
+              <h3 style={{ fontSize: '18px', fontWeight: '600', color: 'var(--color-text-primary)', marginBottom: '8px' }}>
+                No games found
+              </h3>
+              <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginBottom: '16px' }}>
+                No games were found for {teamName}.
+              </p>
+              <p style={{
+                background: 'var(--color-primary-light)',
+                color: 'var(--color-accent)',
+                display: 'inline-block',
+                padding: '8px 16px',
+                borderRadius: '6px',
+                fontSize: '13px',
+                fontWeight: '500'
+              }}>
+                💡 Run the fixtures update to load data
+              </p>
             </div>
-            <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">Nenhum jogo encontrado</h3>
-            <p className="text-gray-500 dark:text-gray-400 text-lg mb-4">
-              Não foram encontrados jogos para {teamName}.
-            </p>
-            <p className="text-sm text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-slate-800 inline-block px-4 py-2 rounded-lg">
-              💡 Execute a atualização das fixtures para carregar os dados
-            </p>
           </div>
         )}
       </main>
