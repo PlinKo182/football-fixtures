@@ -61,12 +61,12 @@ export default function GameCard({ game, isRecent = false, highlightTeam = null,
         <div className="w-16 text-center">
           {game.status === 'postponed' ? (
             <span className="w-8 h-5 bg-yellow-500 text-white text-xs font-bold rounded-sm flex items-center justify-center">ADI</span>
-          ) : game.status === 'finished' ? (
+          ) : (game.homeScore !== null && game.awayScore !== null) || game.status === 'finished' ? (
             <span className="w-8 h-5 bg-green-500 text-white text-xs font-bold rounded-sm flex items-center justify-center">FIM</span>
           ) : game.status === 'live' ? (
             <span className="w-8 h-5 bg-red-500 text-white text-xs font-bold rounded-sm flex items-center justify-center">LIVE</span>
           ) : new Date(game.date) < new Date() ? (
-            <span className="w-8 h-5 bg-yellow-500 text-white text-xs font-bold rounded-sm flex items-center justify-center">ADI</span>
+            <span className="w-8 h-5 bg-gray-400 text-white text-xs font-bold rounded-sm flex items-center justify-center">???</span>
           ) : (
             <span className="w-8 h-5 bg-blue-500 text-white text-xs font-bold rounded-sm flex items-center justify-center">AGD</span>
           )}
