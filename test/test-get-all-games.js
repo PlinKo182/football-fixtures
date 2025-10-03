@@ -5,7 +5,7 @@ async function testGetAllGames() {
     console.log('🔍 Testando getAllGames diretamente...\n');
     
     // Importar a função
-    const { getAllGames } = await import('./lib/dataLoader.js');
+    const { getAllGames } = await import('../lib/dataLoader.js');
     
     console.log('📊 Chamando getAllGames...');
     const allGames = await getAllGames();

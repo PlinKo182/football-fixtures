@@ -1,41 +1,76 @@
-export default function GameCard({ game, isRecent = false }) {
+import Link from 'next/link';
+
+export default function GameCard({ game, isRecent = false, highlightTeam = null }) {
   const gameDate = new Date(game.date);
-  const formattedDate = gameDate.toLocaleDateString('pt-BR');
+  
+  // Formato manual para garantir "05 out 25"
+  const months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 
+                  'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  const day = gameDate.getDate().toString().padStart(2, '0');
+  const month = months[gameDate.getMonth()];
+  const year = gameDate.getFullYear().toString().slice(-2);
+  const formattedDate = `${day} ${month} ${year}`;
+  
   const formattedTime = game.time;
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
-      <div className="flex justify-between items-start mb-2">
-        <span className="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
-          {game.league}
-        </span>
-        <span className={`text-xs px-2 py-1 rounded ${
-          game.status === 'live' ? 'bg-red-100 text-red-800' :
-          game.status === 'finished' ? 'bg-gray-100 text-gray-800' :
-          'bg-green-100 text-green-800'
-        }`}>
-          {game.status === 'live' ? 'AO VIVO' :
-           game.status === 'finished' ? 'FINALIZADO' : 'AGENDADO'}
-        </span>
-      </div>
-      
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <div className="font-semibold text-gray-900">{game.homeTeam}</div>
-          <div className="text-gray-600">vs</div>
-          <div className="font-semibold text-gray-900">{game.awayTeam}</div>
-        </div>
+    <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 hover:border-gray-200 dark:hover:border-slate-600 transition-all duration-200 rounded-lg overflow-hidden hover:shadow-sm">
+      {/* Linha única com toda a informação */}
+      <div className="px-6 py-4 flex items-center justify-between">
         
-        {isRecent && game.homeScore !== null && game.awayScore !== null ? (
-          <div className="text-2xl font-bold text-gray-900">
-            {game.homeScore} - {game.awayScore}
-          </div>
-        ) : (
-          <div className="text-right text-sm text-gray-600">
-            <div>{formattedDate}</div>
-            <div>{formattedTime}</div>
-          </div>
-        )}
+        {/* Equipa de Interesse */}
+        <div className="flex-shrink-0 w-28 text-center">
+          {highlightTeam && (
+            <Link 
+              href={`/team/${encodeURIComponent(highlightTeam)}`}
+              className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 px-2 py-1 rounded-md transition-colors inline-block"
+            >
+              {highlightTeam}
+            </Link>
+          )}
+        </div>
+
+        {/* Data e Hora */}
+        <div className="flex-shrink-0 w-28 text-center ml-4">
+          <div className="text-sm font-medium text-gray-900 dark:text-white">{formattedDate}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{formattedTime}</div>
+        </div>
+
+        {/* Equipa Casa */}
+        <div className="flex-1 text-right pr-4">
+          <span className="text-sm font-semibold text-gray-900 dark:text-white">{game.homeTeam}</span>
+        </div>
+
+        {/* Resultado ou VS */}
+        <div className="flex-shrink-0 w-16 text-center">
+          {isRecent && game.homeScore !== null && game.awayScore !== null ? (
+            <div className="text-lg font-bold text-gray-900 dark:text-white">
+              {game.homeScore} - {game.awayScore}
+            </div>
+          ) : (
+            <div className="text-sm text-gray-400 dark:text-gray-500 font-medium">vs</div>
+          )}
+        </div>
+
+        {/* Equipa Fora */}
+        <div className="flex-1 text-left pl-4">
+          <span className="text-sm font-semibold text-gray-900 dark:text-white">{game.awayTeam}</span>
+        </div>
+
+        {/* Status */}
+        <div className="flex-shrink-0 w-16 text-right">
+          <span className={`text-xs font-medium px-2 py-1 rounded-md ${
+            game.status === 'live' 
+              ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
+            game.status === 'finished' 
+              ? 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300' :
+              'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+          }`}>
+            {game.status === 'live' ? 'LIVE' :
+             game.status === 'finished' ? 'FIM' : 'AGD'}
+          </span>
+        </div>
+
       </div>
     </div>
   );

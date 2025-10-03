@@ -4,6 +4,13 @@ import Link from 'next/link';
 import GameCard from './components/GameCard';
 import AutoDataLoader from './components/AutoDataLoader';
 
+// Função para determinar qual equipa é de interesse (das nossas equipas)
+function getTeamOfInterest(homeTeam, awayTeam) {
+  if (TEAMS.includes(homeTeam)) return homeTeam;
+  if (TEAMS.includes(awayTeam)) return awayTeam;
+  return null;
+}
+
 async function getUpcomingGames() {
   try {
     const allGames = await getAllGames();
@@ -23,14 +30,18 @@ async function getUpcomingGames() {
             const uniqueId = `${leagueName}_${team.teamName}_${game.date}`;
             if (!addedGames.has(uniqueId)) {
               addedGames.add(uniqueId);
+              const homeTeam = game.location === 'home' ? team.teamName : game.opponent;
+              const awayTeam = game.location === 'home' ? game.opponent : team.teamName;
+              
               upcomingGames.push({
                 id: uniqueId,
-                homeTeam: game.location === 'home' ? team.teamName : game.opponent,
-                awayTeam: game.location === 'home' ? game.opponent : team.teamName,
+                homeTeam: homeTeam,
+                awayTeam: awayTeam,
                 league: leagueName,
                 date: game.date,
                 time: game.time,
-                status: 'scheduled'
+                status: 'scheduled',
+                teamOfInterest: getTeamOfInterest(homeTeam, awayTeam)
               });
             }
           }
@@ -69,54 +80,115 @@ export default async function Home() {
   const hasData = upcomingGames.length > 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen dark:bg-slate-900">
       <AutoDataLoader />
       
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">Football Fixtures</h1>
-          <p className="text-gray-600 mt-2">Acompanhe os jogos dos seus times favoritos</p>
+      {/* Header moderno com gradiente */}
+      <header className="header-gradient shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-white mb-2">⚽ Football Fixtures</h1>
+              <p className="text-blue-100 text-lg">Acompanhe os jogos dos seus times favoritos</p>
+            </div>
+            <div className="hidden md:block">
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3 border border-white/20">
+                <p className="text-white/90 text-sm font-medium">Próximos jogos</p>
+                <p className="text-white text-2xl font-bold">{upcomingGames.length}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 py-12">
+        {/* Alerta se não há dados */}
         {!hasData && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-8">
-            <h3 className="text-sm font-medium text-yellow-800">Base de dados vazia</h3>
-            <p className="mt-1 text-sm text-yellow-700">O sistema irá carregar automaticamente os dados da API SportRadar</p>
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-6 mb-12 shadow-sm">
+            <div className="flex items-center">
+              <div className="bg-amber-100 dark:bg-amber-900/50 rounded-full p-2 mr-4">
+                <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-200">Base de dados vazia</h3>
+                <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">O sistema irá carregar automaticamente os dados da API SportRadar</p>
+              </div>
+            </div>
           </div>
         )}
 
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Times</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {TEAMS.map((team) => (
-              <Link key={team} href={'/team/' + encodeURIComponent(team)} className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow text-center">
-                <h3 className="font-semibold text-gray-900 text-sm">{team}</h3>
-              </Link>
-            ))}
-          </div>
-        </section>
 
+
+        {/* Secção de próximos jogos */}
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Próximos Jogos</h2>
+          <div className="flex items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mr-4">📅 Próximos Jogos</h2>
+            <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+            {upcomingGames.length > 0 && (
+              <span className="ml-4 text-sm text-gray-500 dark:text-gray-400">{upcomingGames.length} jogos</span>
+            )}
+          </div>
+          
           {upcomingGames.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {upcomingGames.map((game) => (
-                <GameCard key={game.id} game={game} />
-              ))}
+            <div className="bg-white dark:bg-slate-800 rounded-lg border border-gray-100 dark:border-slate-700 overflow-hidden">
+              {/* Header da "tabela" */}
+              <div className="bg-gray-50 dark:bg-slate-700 px-6 py-3 border-b border-gray-100 dark:border-slate-600">
+                <div className="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wide">
+                  <div className="w-28 text-center">Equipa</div>
+                  <div className="w-28 text-center ml-4">Data</div>
+                  <div className="flex-1 text-right pr-4">Casa</div>
+                  <div className="w-16 text-center"></div>
+                  <div className="flex-1 text-left pl-4">Fora</div>
+                  <div className="w-16 text-right">Status</div>
+                </div>
+              </div>
+              
+              {/* Lista de jogos */}
+              <div className="divide-y divide-gray-50 dark:divide-slate-700">
+                {upcomingGames.map((game, index) => (
+                  <div key={game.id} className={`${index % 2 === 0 ? 'bg-white dark:bg-slate-800' : 'bg-gray-50 dark:bg-slate-900'}`}>
+                    <GameCard game={game} highlightTeam={game.teamOfInterest} />
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-600">{!hasData ? 'Carregando dados...' : 'Nenhum jogo agendado encontrado.'}</p>
+            <div className="bg-white dark:bg-slate-800 rounded-lg border border-gray-100 dark:border-slate-700 p-12 text-center">
+              <div className="bg-gray-100 dark:bg-slate-700 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <p className="text-gray-500 dark:text-gray-400 text-lg">{!hasData ? 'Carregando dados...' : 'Nenhum jogo agendado encontrado.'}</p>
             </div>
           )}
         </section>
       </main>
 
+      {/* Botões flutuantes modernos */}
       <div className="fixed bottom-6 right-6 flex flex-col gap-3">
-        <a href="/api/update-fixtures" target="_blank" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition-colors">Atualizar Fixtures</a>
-        <a href="/api/force-update" target="_blank" className="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition-colors text-sm">Forçar Atualização</a>
+        <a 
+          href="/api/update-fixtures" 
+          target="_blank" 
+          className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Atualizar
+        </a>
+        <a 
+          href="/api/force-update" 
+          target="_blank" 
+          className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium py-2 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 text-sm flex items-center gap-2"
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          Forçar
+        </a>
       </div>
     </div>
   );

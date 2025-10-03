@@ -1,5 +1,5 @@
 require('dotenv').config({ path: '.env.local' });
-const { getAllGames } = require('./lib/dataLoader');
+const { getAllGames } = require('../lib/dataLoader');
 
 async function testBetisVariations() {
   try {

@@ -1,7 +1,7 @@
 import { config } from 'dotenv';
 config({ path: '.env.local' });
 
-import { getAllGames } from './lib/dataLoader.js';
+import { getAllGames } from '../lib/dataLoader.js';
 
 const testHomepage = async () => {
   console.log('🏠 TESTE LÓGICA HOMEPAGE...\n');
