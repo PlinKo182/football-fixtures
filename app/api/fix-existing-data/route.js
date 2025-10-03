@@ -1,4 +1,4 @@
-import { connectDB } from '../../../lib/mongodb.js';
+import connectToDatabase from '../../../lib/mongodb.js';
 import Game from '../../../models/Game.js';
 import { LEAGUE_MAPPINGS } from '../../../lib/teams.js';
 
