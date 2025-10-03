@@ -11,11 +11,12 @@ export default function GameCard({ game, isRecent = false, highlightTeam = null 
   const year = gameDate.getFullYear().toString().slice(-2);
   const formattedDate = `${day} ${month} ${year}`;
   
-  // Converter para hora local do utilizador em formato 24h
-  const formattedTime = gameDate.toLocaleTimeString([], { 
+  // Converter para hora portuguesa em formato 24h
+  const formattedTime = gameDate.toLocaleTimeString('pt-PT', { 
     hour: '2-digit', 
     minute: '2-digit',
-    hour12: false
+    hour12: false,
+    timeZone: 'Europe/Lisbon'
   });
 
   return (
