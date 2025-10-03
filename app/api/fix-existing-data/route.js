@@ -4,7 +4,7 @@ import { LEAGUE_MAPPINGS } from '../../../lib/teams.js';
 
 export async function GET() {
   try {
-    await connectDB();
+  await connectToDatabase();
     
     console.log('🔧 Corrigindo dados existentes no MongoDB...');
     

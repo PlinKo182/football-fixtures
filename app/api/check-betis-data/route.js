@@ -3,7 +3,7 @@ import Game from '../../../models/Game.js';
 
 export async function GET() {
   try {
-    await connectDB();
+  await connectToDatabase();
     
     console.log('🔍 Verificando dados do Bétis no MongoDB...');
     

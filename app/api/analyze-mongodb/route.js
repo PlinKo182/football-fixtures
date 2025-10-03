@@ -3,7 +3,7 @@ import Game from '../../../models/Game.js';
 
 export async function GET() {
   try {
-    await connectDB();
+  await connectToDatabase();
     
     console.log('🔍 Analisando dados do MongoDB vs WebApp display...');
     

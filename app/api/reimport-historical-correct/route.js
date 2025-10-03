@@ -1,4 +1,4 @@
-import { importHistoricalDataForSeason } from '../../../lib/historicalDataLoader.js';
+import { importAllHistoricalData } from '../../../lib/historicalDataLoader.js';
 
 export async function GET() {
   try {
@@ -8,7 +8,7 @@ export async function GET() {
     console.log('🗑️ Limpando dados históricos antigos...');
     
     // Reimportar com estrutura correta
-    const result = await importHistoricalDataForSeason('2024-25');
+  const result = await importAllHistoricalData('2024-25');
     
     if (result.success) {
       console.log('✅ Reimportação histórica completa!');
