@@ -37,7 +37,7 @@ export default function GameCard({ game, isRecent = false, highlightTeam = null,
         {/* VS ou Resultado */}
         <div className="w-12 text-center">
           {isRecent && (game.homeScore !== null && game.awayScore !== null) ? (
-            <span className="text-xs font-mono bg-gray-100 dark:bg-slate-600 px-1 py-0.5 rounded">
+            <span className="text-xs font-mono bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-800 px-1 py-0.5 rounded font-semibold">
               {game.homeScore}-{game.awayScore}
             </span>
           ) : (
@@ -54,10 +54,12 @@ export default function GameCard({ game, isRecent = false, highlightTeam = null,
         <div className="w-16 text-center">
           {game.status === 'postponed' ? (
             <span className="w-8 h-5 bg-yellow-500 text-white text-xs font-bold rounded-sm flex items-center justify-center">ADI</span>
-          ) : game.status === 'finished' ? (
+          ) : game.status === 'finished' || (isRecent && game.homeScore !== null && game.awayScore !== null) ? (
             <span className="w-8 h-5 bg-green-500 text-white text-xs font-bold rounded-sm flex items-center justify-center">FIM</span>
           ) : game.status === 'live' ? (
             <span className="w-8 h-5 bg-red-500 text-white text-xs font-bold rounded-sm flex items-center justify-center">LIVE</span>
+          ) : new Date(game.date) < new Date() ? (
+            <span className="w-8 h-5 bg-yellow-500 text-white text-xs font-bold rounded-sm flex items-center justify-center">ADI</span>
           ) : (
             <span className="w-8 h-5 bg-blue-500 text-white text-xs font-bold rounded-sm flex items-center justify-center">AGD</span>
           )}
@@ -115,15 +117,15 @@ export default function GameCard({ game, isRecent = false, highlightTeam = null,
           <span className={`text-xs font-medium px-2 py-1 rounded-md ${
             game.status === 'live' 
               ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
-            game.status === 'finished' 
-              ? 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300' :
-            game.status === 'postponed' 
+            game.status === 'finished' || (isRecent && game.homeScore !== null && game.awayScore !== null)
+              ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+            game.status === 'postponed' || (new Date(game.date) < new Date() && (game.homeScore === null || game.awayScore === null))
               ? 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
-              'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+              'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
           }`}>
             {game.status === 'live' ? 'LIVE' :
-             game.status === 'finished' ? 'FIM' : 
-             game.status === 'postponed' ? 'ADI' : 'AGD'}
+             game.status === 'finished' || (isRecent && game.homeScore !== null && game.awayScore !== null) ? 'FIM' : 
+             game.status === 'postponed' || (new Date(game.date) < new Date() && (game.homeScore === null || game.awayScore === null)) ? 'ADI' : 'AGD'}
           </span>
         </div>
 
