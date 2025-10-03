@@ -22,6 +22,15 @@ async function getUpcomingGames() {
     // Iterar por todas as ligas e equipas
     Object.entries(allGames).forEach(([leagueName, teams]) => {
       teams.forEach(team => {
+        // Debug específico para Bétis
+        if (team.teamName === 'Bétis') {
+          console.log(`🔍 DEBUG BÉTIS: Liga=${leagueName}, Jogos=${team.games.length}`);
+          team.games.forEach(game => {
+            const gameDate = new Date(game.date);
+            console.log(`   Jogo: ${game.date} vs ${game.opponent} (${gameDate > now ? 'futuro' : 'passado'})`);
+          });
+        }
+        
         team.games.forEach(game => {
           const gameDate = new Date(game.date);
           const fourteenDaysLater = new Date(now.getTime() + (14 * 24 * 60 * 60 * 1000));
@@ -32,6 +41,11 @@ async function getUpcomingGames() {
               addedGames.add(uniqueId);
               const homeTeam = game.location === 'home' ? team.teamName : game.opponent;
               const awayTeam = game.location === 'home' ? game.opponent : team.teamName;
+              
+              // Debug específico para jogos do Bétis
+              if (team.teamName === 'Bétis') {
+                console.log(`🎯 DEBUG BÉTIS - Jogo adicionado: ${homeTeam} vs ${awayTeam} em ${game.date}`);
+              }
               
               upcomingGames.push({
                 id: uniqueId,
@@ -89,7 +103,7 @@ export default async function Home() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-white mb-2">⚽ Football Fixtures</h1>
-              <p className="text-blue-100 text-lg">Acompanhe os jogos dos seus times favoritos</p>
+              <p className="text-blue-100 text-lg">Acompanhe os jogos dos seus times favoritos • Atualizado</p>
             </div>
             <div className="hidden md:block">
               <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3 border border-white/20">
