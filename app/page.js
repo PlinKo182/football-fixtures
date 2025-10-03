@@ -8,6 +8,7 @@ async function getUpcomingGames() {
   try {
     const allGames = await getAllGames();
     const upcomingGames = [];
+    const addedGames = new Set();
     const now = new Date();
 
     // Iterar por todas as ligas e equipas
@@ -18,17 +19,19 @@ async function getUpcomingGames() {
           const fourteenDaysLater = new Date(now.getTime() + (14 * 24 * 60 * 60 * 1000));
           
           if (gameDate > now && gameDate < fourteenDaysLater) {
-            upcomingGames.push({
-              _id: `${team.teamName}-${game.sportRadarId || Math.random()}`,
-              league: team.league || leagueName,
-              homeTeam: game.isHome ? team.teamName : game.opponent,
-              awayTeam: game.isHome ? game.opponent : team.teamName,
-              date: game.date,
-              time: game.time || 'TBD',
-              status: game.status || 'scheduled',
-              homeScore: game.isHome ? game.teamScore : game.opponentScore,
-              awayScore: game.isHome ? game.opponentScore : game.teamScore
-            });
+            const uniqueId = `${leagueName}_${team.teamName}_${game.date}`;
+            if (!addedGames.has(uniqueId)) {
+              addedGames.add(uniqueId);
+              upcomingGames.push({
+                id: uniqueId,
+                homeTeam: game.location === 'home' ? team.teamName : game.opponent,
+                awayTeam: game.location === 'home' ? game.opponent : team.teamName,
+                league: leagueName,
+                date: game.date,
+                time: game.time,
+                status: 'scheduled'
+              });
+            }
           }
         });
       });
@@ -96,7 +99,7 @@ export default async function Home() {
           {upcomingGames.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {upcomingGames.map((game) => (
-                <GameCard key={game._id} game={game} />
+                <GameCard key={game.id} game={game} />
               ))}
             </div>
           ) : (
