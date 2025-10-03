@@ -7,6 +7,7 @@ import AutoDataLoader from './components/AutoDataLoader';
 async function getUpcomingGames() {
   try {
     const allGames = await getAllGames();
+    
     const upcomingGames = [];
     const addedGames = new Set();
     const now = new Date();
@@ -46,6 +47,8 @@ async function getUpcomingGames() {
       )
     );
     
+
+
     return uniqueGames
       .sort((a, b) => new Date(a.date) - new Date(b.date))
       .slice(0, 10)
@@ -55,7 +58,8 @@ async function getUpcomingGames() {
       }));
     
   } catch (error) {
-    console.error('Erro ao buscar jogos próximos:', error);
+    console.error('❌ Erro ao buscar jogos próximos:', error);
+    console.error(error.stack);
     return [];
   }
 }
