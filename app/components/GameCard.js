@@ -12,10 +12,9 @@ export default function GameCard({ game, isRecent = false, highlightTeam = null 
   const formattedDate = `${day} ${month} ${year}`;
   
   // Converter para hora local do utilizador
-  const formattedTime = gameDate.toLocaleTimeString('pt-PT', { 
+  const formattedTime = gameDate.toLocaleTimeString([], { 
     hour: '2-digit', 
-    minute: '2-digit',
-    timeZone: 'Europe/Lisbon'
+    minute: '2-digit'
   });
 
   return (
