@@ -107,8 +107,9 @@ export default async function Home() {
         </section>
       </main>
 
-      <div className="fixed bottom-6 right-6">
+      <div className="fixed bottom-6 right-6 flex flex-col gap-3">
         <a href="/api/update-fixtures" target="_blank" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition-colors">Atualizar Fixtures</a>
+        <a href="/api/force-update" target="_blank" className="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition-colors text-sm">Forçar Atualização</a>
       </div>
     </div>
   );

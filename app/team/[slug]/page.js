@@ -40,11 +40,12 @@ async function getTeamGames(teamName) {
   }
 }
 
-export async function generateStaticParams() {
-  return TEAMS.map((team) => ({
-    slug: encodeURIComponent(team),
-  }));
-}
+// Remover generateStaticParams para permitir rotas dinâmicas
+// export async function generateStaticParams() {
+//   return TEAMS.map((team) => ({
+//     slug: encodeURIComponent(team),
+//   }));
+// }
 
 export default async function TeamPage({ params }) {
   const teamName = decodeURIComponent(params.slug);
