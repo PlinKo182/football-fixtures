@@ -11,6 +11,9 @@ import GameCard from '@/app/components/GameCard';
 //   }));
 // }
 
+// Cache for 10 minutes - perfect balance between speed and fresh data
+export const revalidate = 600;
+
 export default async function TeamPage({ params }) {
   const resolvedParams = await params;
   const teamName = decodeURIComponent(resolvedParams.slug);

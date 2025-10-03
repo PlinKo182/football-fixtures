@@ -5,6 +5,9 @@ import GameCard from './components/GameCard';
 import AutoDataLoader from './components/AutoDataLoader';
 import ImportHistoricalButton from './components/ImportHistoricalButton';
 
+// Cache for 10 minutes - perfect balance between speed and fresh data
+export const revalidate = 600;
+
 // Função para determinar qual equipa é de interesse (das nossas equipas)
 function getTeamOfInterest(homeTeam, awayTeam) {
   if (TEAMS.includes(homeTeam)) return homeTeam;
