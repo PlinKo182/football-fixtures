@@ -39,7 +39,6 @@ async function getUpcomingGames() {
                 awayTeam: awayTeam,
                 league: leagueName,
                 date: game.date,
-                time: game.time,
                 status: 'scheduled',
                 teamOfInterest: getTeamOfInterest(homeTeam, awayTeam)
               });
