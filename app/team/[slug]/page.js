@@ -90,69 +90,32 @@ export default async function TeamPage({ params }) {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-12">
-        {/* Próximos Jogos */}
-        {upcomingGames.length > 0 && (
-          <section className="mb-16">
-            <div className="flex items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mr-4">📅 Próximos Jogos</h2>
-              <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
-              <span className="ml-4 text-sm text-gray-500 dark:text-gray-400">{upcomingGames.length} jogos</span>
-            </div>
-            
-            <div className="bg-white dark:bg-slate-800 rounded-lg border border-gray-100 dark:border-slate-700 overflow-hidden">
-              {/* Header */}
-              <div className="bg-gray-50 dark:bg-slate-700 px-6 py-3 border-b border-gray-100 dark:border-slate-600">
-                <div className="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wide">
-                  <div className="w-28 text-center ml-32">Data</div>
-                  <div className="flex-1 text-right pr-4">Casa</div>
-                  <div className="w-16 text-center"></div>
-                  <div className="flex-1 text-left pl-4">Fora</div>
-                  <div className="w-24 text-center"></div>
-                  <div className="w-16 text-right">Status</div>
-                </div>
-              </div>
-              
-              {/* Lista de jogos */}
-              <div className="divide-y divide-gray-50 dark:divide-slate-700">
-                {upcomingGames.map((game, index) => (
-                  <div key={game._id} className={`${index % 2 === 0 ? 'bg-white dark:bg-slate-800' : 'bg-gray-50 dark:bg-slate-900'}`}>
-                    <GameCard game={game} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Jogos Anteriores */}
-        {pastGames.length > 0 && (
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        {/* Todos os Jogos numa única tabela */}
+        {games.length > 0 && (
           <section>
-            <div className="flex items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mr-4">📊 Jogos Anteriores</h2>
+            <div className="flex items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mr-3">⚽ Todos os Jogos</h2>
               <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
-              <span className="ml-4 text-sm text-gray-500 dark:text-gray-400">{pastGames.length} jogos</span>
+              <span className="ml-3 text-sm text-gray-500 dark:text-gray-400">{games.length} jogos</span>
             </div>
             
             <div className="bg-white dark:bg-slate-800 rounded-lg border border-gray-100 dark:border-slate-700 overflow-hidden">
-              {/* Header */}
-              <div className="bg-gray-50 dark:bg-slate-700 px-6 py-3 border-b border-gray-100 dark:border-slate-600">
-                <div className="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wide">
-                  <div className="w-28 text-center ml-32">Data</div>
-                  <div className="flex-1 text-right pr-4">Casa</div>
-                  <div className="w-16 text-center">Resultado</div>
-                  <div className="flex-1 text-left pl-4">Fora</div>
-                  <div className="w-24 text-center"></div>
-                  <div className="w-16 text-right">Status</div>
+              {/* Header compacto */}
+              <div className="bg-gray-50 dark:bg-slate-700 px-4 py-2 border-b border-gray-100 dark:border-slate-600">
+                <div className="flex items-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wide">
+                  <div className="w-24">Data/Hora</div>
+                  <div className="flex-1 text-right pr-2">Casa</div>
+                  <div className="w-12 text-center">vs</div>
+                  <div className="flex-1 text-left pl-2">Fora</div>
+                  <div className="w-16 text-center">Status</div>
                 </div>
               </div>
               
-              {/* Lista de jogos */}
+              {/* Lista de jogos compacta */}
               <div className="divide-y divide-gray-50 dark:divide-slate-700">
-                {pastGames.map((game, index) => (
-                  <div key={game._id} className={`${index % 2 === 0 ? 'bg-white dark:bg-slate-800' : 'bg-gray-50 dark:bg-slate-900'}`}>
-                    <GameCard game={game} isRecent />
-                  </div>
+                {games.map((game, index) => (
+                  <GameCard key={game._id} game={game} isRecent={new Date(game.date) < new Date()} isCompact={true} />
                 ))}
               </div>
             </div>
