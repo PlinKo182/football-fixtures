@@ -38,6 +38,9 @@ export default async function TeamPage({ params }) {
     awayScore: game.isHome ? game.opponentScore : game.teamScore
   }));
 
+  // Calcular jogos próximos para o header
+  const upcomingGames = games.filter(game => new Date(game.date) >= new Date());
+
   return (
     <div className="min-h-screen dark:bg-slate-900">
       {/* Header moderno */}
