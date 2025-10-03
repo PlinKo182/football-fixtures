@@ -1,18 +1,6 @@
 import Link from 'next/link';
 
 export default function GameCard({ game, isRecent = false, highlightTeam = null, isCompact = false }) {
-  // Debug: Log dos dados do jogo (apenas se for histórico)
-  if (game.season === '2024-25') {
-    console.log('🎮 GameCard histórico:', {
-      homeTeam: game.homeTeam,
-      awayTeam: game.awayTeam,
-      homeScore: game.homeScore,
-      awayScore: game.awayScore,
-      status: game.status,
-      season: game.season
-    });
-  }
-
   const gameDate = new Date(game.date);
   
   // Formato manual para garantir "05 out 25"
