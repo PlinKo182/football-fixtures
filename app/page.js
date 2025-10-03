@@ -39,8 +39,8 @@ async function getUpcomingGames() {
             const uniqueId = `${leagueName}_${team.teamName}_${game.date}`;
             if (!addedGames.has(uniqueId)) {
               addedGames.add(uniqueId);
-              const homeTeam = game.location === 'home' ? team.teamName : game.opponent;
-              const awayTeam = game.location === 'home' ? game.opponent : team.teamName;
+              const homeTeam = game.isHome ? team.teamName : game.opponent;
+              const awayTeam = game.isHome ? game.opponent : team.teamName;
               
               // Debug específico para jogos do Bétis
               if (team.teamName === 'Bétis') {
