@@ -8,21 +8,24 @@ async function getUpcomingGames() {
   try {
     const allGames = await getAllGames();
     const upcomingGames = [];
+    const now = new Date();
 
     // Iterar por todas as ligas e equipas
-    Object.values(allGames).forEach(teams => {
+    Object.entries(allGames).forEach(([leagueName, teams]) => {
       teams.forEach(team => {
         team.games.forEach(game => {
           const gameDate = new Date(game.date);
-          if (gameDate > new Date() && game.status !== 'finished') {
+          const fourteenDaysLater = new Date(now.getTime() + (14 * 24 * 60 * 60 * 1000));
+          
+          if (gameDate > now && gameDate < fourteenDaysLater) {
             upcomingGames.push({
-              _id: `${team.teamName}-${game.sportRadarId}`,
-              league: team.league || 'La Liga',
+              _id: `${team.teamName}-${game.sportRadarId || Math.random()}`,
+              league: team.league || leagueName,
               homeTeam: game.isHome ? team.teamName : game.opponent,
               awayTeam: game.isHome ? game.opponent : team.teamName,
               date: game.date,
-              time: game.time,
-              status: game.status,
+              time: game.time || 'TBD',
+              status: game.status || 'scheduled',
               homeScore: game.isHome ? game.teamScore : game.opponentScore,
               awayScore: game.isHome ? game.opponentScore : game.teamScore
             });
@@ -31,7 +34,7 @@ async function getUpcomingGames() {
       });
     });
 
-    // Remover duplicatas (mesmo jogo aparece para ambas as equipas)
+    // Remover duplicatas
     const uniqueGames = upcomingGames.filter((game, index, self) => 
       index === self.findIndex(g => 
         g.homeTeam === game.homeTeam && 
@@ -39,8 +42,7 @@ async function getUpcomingGames() {
         new Date(g.date).getTime() === new Date(game.date).getTime()
       )
     );
-
-    // Ordenar por data e limitar a 10
+    
     return uniqueGames
       .sort((a, b) => new Date(a.date) - new Date(b.date))
       .slice(0, 10)
@@ -48,8 +50,9 @@ async function getUpcomingGames() {
         ...game,
         date: new Date(game.date).toISOString(),
       }));
+    
   } catch (error) {
-    console.error('Erro ao buscar jogos:', error);
+    console.error('Erro ao buscar jogos próximos:', error);
     return [];
   }
 }
