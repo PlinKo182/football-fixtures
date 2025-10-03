@@ -30,12 +30,17 @@ export default async function TeamPage({ params }) {
   const games = teamData.games.map(game => ({
     _id: `${teamName}-${game.sportRadarId || Math.random()}`,
     league: teamData.league,
-    homeTeam: game.isHome ? teamName : game.opponent,
-    awayTeam: game.isHome ? game.opponent : teamName,
+    homeTeam: game.homeTeam || (game.isHome ? teamName : game.opponent),
+    awayTeam: game.awayTeam || (game.isHome ? game.opponent : teamName),
     date: game.date,
     status: game.status,
-    homeScore: game.isHome ? game.teamScore : game.opponentScore,
-    awayScore: game.isHome ? game.opponentScore : game.teamScore,
+    // Usar homeScore/awayScore diretamente se existirem, senão mapear de teamScore/opponentScore
+    homeScore: game.homeScore !== null && game.homeScore !== undefined ? 
+               game.homeScore : 
+               (game.isHome ? game.teamScore : game.opponentScore),
+    awayScore: game.awayScore !== null && game.awayScore !== undefined ? 
+               game.awayScore : 
+               (game.isHome ? game.opponentScore : game.teamScore),
     season: game.season || '2025-26' // Fallback para época atual
   }));
 
