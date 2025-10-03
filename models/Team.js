@@ -58,10 +58,12 @@ const TeamSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Função para obter o modelo da liga
-export function getLeagueModel(leagueName) {
+// Função para obter o modelo da liga com época
+export function getLeagueModel(leagueName, season = '2025-26') {
   // Normalizar o nome da liga para usar como nome da coleção
-  const collectionName = leagueName.replace(/\s+/g, '').toLowerCase();
+  const baseName = leagueName.replace(/\s+/g, '').toLowerCase();
+  const seasonSuffix = season.replace('-', '_');
+  const collectionName = `${baseName}_${seasonSuffix}`;
   
   // Verificar se o modelo já existe
   if (mongoose.models[collectionName]) {
@@ -70,6 +72,16 @@ export function getLeagueModel(leagueName) {
   
   // Criar e retornar o modelo
   return mongoose.model(collectionName, TeamSchema, collectionName);
+}
+
+// Função para compatibilidade com código existente (época atual)
+export function getLeagueModelCurrent(leagueName) {
+  return getLeagueModel(leagueName, '2025-26');
+}
+
+// Função para dados históricos
+export function getLeagueModelHistorical(leagueName, season = '2024-25') {
+  return getLeagueModel(leagueName, season);
 }
 
 export default TeamSchema;

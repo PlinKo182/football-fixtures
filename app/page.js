@@ -3,6 +3,7 @@ import { TEAMS } from '@/lib/teams';
 import Link from 'next/link';
 import GameCard from './components/GameCard';
 import AutoDataLoader from './components/AutoDataLoader';
+import ImportHistoricalButton from './components/ImportHistoricalButton';
 
 // Função para determinar qual equipa é de interesse (das nossas equipas)
 function getTeamOfInterest(homeTeam, awayTeam) {
@@ -115,6 +116,13 @@ export default async function Home() {
                 <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">O sistema irá carregar automaticamente os dados da API SportRadar</p>
               </div>
             </div>
+          </div>
+        )}
+        
+        {/* Botão para importar dados históricos */}
+        {hasData && (
+          <div className="mb-8">
+            <ImportHistoricalButton />
           </div>
         )}
 
