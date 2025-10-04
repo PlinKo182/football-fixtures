@@ -88,23 +88,35 @@ function createCompleteGameList(games, history) {
         gameEntry.isDraw = historyEntry.isDraw;
         gameEntry.result = historyEntry.result;
         gameEntry.profit = historyEntry.profit;
-        
-        // Calcular o total acumulado CORRETAMENTE - cada aposta é descontada imediatamente
+        gameEntry.sequenceInvested = historyEntry.sequenceInvested;
+
+        // Use the authoritative values from historyEntry so the running total
+        // is accurate even in mixed-team views. historyEntry.profit is
+        // already calculated using the real odds for that finished game.
+        const entrySequence = typeof historyEntry.sequence === 'number' ? historyEntry.sequence : sequenceCounter;
+
         if (historyEntry.isDraw) {
-          // WIN - Ganhou empate
-          // Desconta a aposta e adiciona os ganhos (usando odds personalizadas)
-          runningTotal = runningTotal - betAmount + (betAmount * gameOdds);
-          
-          // Reset para nova sequência
+          // WIN - set runningTotal to the raw profit of this sequence (replace)
+          // according to the requested behaviour: the displayed total after a
+          // winning sequence should be the profit for that sequence.
+          runningTotal = (typeof historyEntry.profitRaw === 'number' ? historyEntry.profitRaw : (typeof historyEntry.profit === 'number' ? historyEntry.profit : calculateProfitIfWin(entrySequence, gameOdds)));
+
+          // Reset sequence for next betting series
           sequenceCounter = 1;
           sequenceInvested = 0.00;
         } else {
-          // LOSS - Perdeu a aposta
-          // Desconta a aposta do total imediatamente
-          runningTotal -= betAmount;
-          sequenceCounter = Math.min(sequenceCounter + 1, MARTINGALE_PROGRESSION.length);
+          // LOSS - subtract the actual bet amount that was staked for this sequence
+          const lossBetAmount = MARTINGALE_PROGRESSION[Math.min(Math.max(entrySequence - 1, 0), MARTINGALE_PROGRESSION.length - 1)];
+          runningTotal -= lossBetAmount;
+
+          // Advance sequence based on the recorded sequence
+          sequenceCounter = Math.min(entrySequence + 1, MARTINGALE_PROGRESSION.length);
         }
-        
+
+        // Expose both rounded profit (for display) and raw profit used for
+        // running total calculations if present.
+        gameEntry.profit = historyEntry.profit;
+        gameEntry.profitRaw = historyEntry.profitRaw;
         gameEntry.runningTotal = Math.round(runningTotal * 100) / 100;
       }
     } else {
@@ -190,8 +202,10 @@ export default function BettingAnalysis({ teamName, games, showEmptyGamesTable =
           const gameOdds = (typeof game.drawOdds === 'number') ? game.drawOdds : (game.customOdds?.draw || 3.0);
 
           if (isDraw) {
-            // Win! Calculate profit for this sequence and reset using actual game odds
-            const sequenceProfit = calculateProfitIfWin(currentSequence, gameOdds);
+            // Win! Calculate profit for this sequence using actual game odds
+            const totalInvestedForSeq = calculateTotalInvested(currentSequence);
+            const rawSequenceProfit = (betAmount * gameOdds) - totalInvestedForSeq;
+            const sequenceProfit = Math.round(rawSequenceProfit * 100) / 100; // rounded for display
             totalProfit += sequenceProfit;
 
             history.push({
@@ -201,6 +215,7 @@ export default function BettingAnalysis({ teamName, games, showEmptyGamesTable =
               odds: gameOdds,
               result: 'WIN',
               profit: sequenceProfit,
+              profitRaw: rawSequenceProfit,
               sequenceInvested: sequenceInvested + betAmount,
               isDraw: true
             });
@@ -209,13 +224,16 @@ export default function BettingAnalysis({ teamName, games, showEmptyGamesTable =
             currentSequence = 1;
           } else {
             // Loss, advance to next sequence
+            // Record the loss as negative of the bet amount so per-game P/L
+            // reflects the actual stake lost.
             history.push({
               game,
               sequence: currentSequence,
               betAmount,
               odds: gameOdds,
               result: 'LOSS',
-              profit: 0,
+              profit: -betAmount,
+              profitRaw: -betAmount,
               sequenceInvested: sequenceInvested + betAmount,
               isDraw: false
             });
@@ -264,37 +282,63 @@ export default function BettingAnalysis({ teamName, games, showEmptyGamesTable =
 
           const teamProfitMap = {};
           const now = new Date();
+          // For each team, build a per-team history and use createCompleteGameList
+          // so the per-team TotalProfit matches the team page's calculation
           for (const [teamKey, tGames] of Object.entries(teamGames)) {
-            // Consider only finished games for this team
+            // Consider only finished games for this team, sorted oldest-first
             const finished = (tGames || []).filter(g => {
               const d = new Date(g.date);
               return d < now && g.homeScore !== null && g.homeScore !== undefined && g.awayScore !== null && g.awayScore !== undefined;
             }).sort((a, b) => new Date(a.date) - new Date(b.date));
 
-            let currentSequence = 1;
-            let totalProfitForTeam = 0.00;
-
+            // Build a minimal history array for this team using the exact same
+            // rules as the main simulation (wins use real odds, losses are -bet)
+            let currentSequenceForTeam = 1;
+            const historyForTeam = [];
             for (const g of finished) {
               const isDraw = g.homeScore === g.awayScore;
               const gameOdds = (typeof g.drawOdds === 'number') ? g.drawOdds : (g.customOdds?.draw || 3.0);
+              const betAmount = MARTINGALE_PROGRESSION[Math.min(currentSequenceForTeam - 1, MARTINGALE_PROGRESSION.length - 1)];
               if (isDraw) {
-                const seqProfit = calculateProfitIfWin(currentSequence, gameOdds);
-                totalProfitForTeam += seqProfit;
-                currentSequence = 1;
+                const totalInvestedForSeq = calculateTotalInvested(currentSequenceForTeam);
+                const rawSequenceProfit = (betAmount * gameOdds) - totalInvestedForSeq;
+                const sequenceProfit = Math.round(rawSequenceProfit * 100) / 100;
+                historyForTeam.push({ game: g, sequence: currentSequenceForTeam, betAmount, odds: gameOdds, result: 'WIN', profit: sequenceProfit, profitRaw: rawSequenceProfit, sequenceInvested: totalInvestedForSeq });
+                currentSequenceForTeam = 1;
               } else {
-                currentSequence = Math.min(currentSequence + 1, MARTINGALE_PROGRESSION.length);
+                historyForTeam.push({ game: g, sequence: currentSequenceForTeam, betAmount, odds: gameOdds, result: 'LOSS', profit: -betAmount, profitRaw: -betAmount, sequenceInvested: calculateTotalInvested(currentSequenceForTeam) });
+                currentSequenceForTeam = Math.min(currentSequenceForTeam + 1, MARTINGALE_PROGRESSION.length);
               }
             }
 
-            teamProfitMap[teamKey] = Math.round(totalProfitForTeam * 100) / 100;
+            // Use createCompleteGameList to get the runningTotal for this team's games
+            try {
+              const completeListForTeam = createCompleteGameList(tGames, historyForTeam);
+              const latestRunning = (completeListForTeam && completeListForTeam.length > 0) ? completeListForTeam[0].runningTotal : 0.00;
+              teamProfitMap[teamKey] = Math.round((typeof latestRunning === 'number' ? latestRunning : 0) * 100) / 100;
+            } catch (e) {
+              console.error('Error computing team profit for', teamKey, e);
+              teamProfitMap[teamKey] = 0.00;
+            }
           }
 
           const completeWithTeamProfit = completeList.map(entry => {
             const teamKey = entry.game.teamOfInterest || entry.game.homeTeam || entry.game.awayTeam || 'Unknown';
-            return { ...entry, teamAggregatedProfit: (typeof teamProfitMap[teamKey] === 'number' ? teamProfitMap[teamKey] : null) };
+            // Prefer authoritative server-provided bettingState.totalProfit when present
+            const bsTotal = entry.game?.bettingState?.totalProfit;
+            const derived = (typeof teamProfitMap[teamKey] === 'number' ? teamProfitMap[teamKey] : null);
+            const finalTeamProfit = (typeof bsTotal === 'number' && !Number.isNaN(bsTotal)) ? bsTotal : derived;
+            return { ...entry, teamAggregatedProfit: (typeof finalTeamProfit === 'number' ? Math.round(finalTeamProfit * 100) / 100 : null) };
           });
 
           setAllGamesWithBetting(completeWithTeamProfit);
+          // Ensure the header "Total Profit" shows the latest running total from
+          // the complete list (most recent game's runningTotal). This makes the
+          // top summary reflect the current cumulative P/L shown in the table.
+          const latestRunning = (completeWithTeamProfit && completeWithTeamProfit.length > 0) ? completeWithTeamProfit[0].runningTotal : null;
+          if (typeof latestRunning === 'number' && !Number.isNaN(latestRunning)) {
+            setBettingState(prev => ({ ...(prev || {}), totalProfit: Math.round(latestRunning * 100) / 100 }));
+          }
         } catch (e) {
           console.error('DEBUG BettingAnalysis: error creating completeGameList', e);
           setAllGamesWithBetting([]);
@@ -369,7 +413,7 @@ export default function BettingAnalysis({ teamName, games, showEmptyGamesTable =
       borderRadius: '8px',
       overflow: 'hidden'
     }}>
-      {showSummary && <BettingSummary bettingState={bettingState} />}
+  {showSummary && <BettingSummary bettingState={bettingState} />}
 
       {allGamesWithBetting.length > 0 && (
         <BettingTable

@@ -31,6 +31,7 @@ async function calculateTeamBettingState(teamName) {
       awayScore: game.awayScore !== null && game.awayScore !== undefined ? 
                  game.awayScore : 
                  (game.isHome ? game.opponentScore : game.teamScore),
+      drawOdds: game.drawOdds
     }));
 
     // Filter finished games, sorted by date (oldest first)
@@ -58,7 +59,8 @@ async function calculateTeamBettingState(teamName) {
       if (isDraw) {
         // Win! Calculate profit and reset sequence
         const betAmount = MARTINGALE_PROGRESSION[Math.min(currentSequence - 1, MARTINGALE_PROGRESSION.length - 1)];
-        const winnings = betAmount * 3.0;
+        const odds = game.drawOdds || 3.0;
+        const winnings = betAmount * odds;
         let totalInvested = 0;
         for (let i = 0; i < currentSequence; i++) {
           totalInvested += MARTINGALE_PROGRESSION[Math.min(i, MARTINGALE_PROGRESSION.length - 1)];

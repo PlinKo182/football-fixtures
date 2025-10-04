@@ -6,6 +6,24 @@ function formatCurrency(amount) {
   return `€${amount.toFixed(2)}`;
 }
 
+// parse numbers robustly: accept numbers, numeric strings, strings with comma decimals
+function parseNumericCandidate(v) {
+  if (v === null || v === undefined) return null;
+  if (typeof v === 'number') return Number(v);
+  if (typeof v === 'string') {
+    let s = v.trim();
+    // remove currency symbols/spaces
+    s = s.replace(/[^0-9,.-]/g, '');
+    // if uses comma as decimal separator and no dot, convert
+    if (s.indexOf(',') !== -1 && s.indexOf('.') === -1) {
+      s = s.replace(/,/g, '.');
+    }
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
 const MARTINGALE_PROGRESSION = [
   0.10, 0.18, 0.32, 0.57, 1.02, 1.78, 3.11, 5.43, 9.47, 16.52,
   28.08, 49.32, 86.31, 150.73, 263.28, 460.24, 804.42, 1407.73, 2463.52, 2000.00
@@ -32,6 +50,8 @@ export default function BettingTable({
 }) {
   if (!entries || entries.length === 0) return null;
 
+  // no debug UI in normal mode
+
   return (
     <div style={{ overflowX: 'auto' }}>
       <table style={{ width: '100%', fontSize: '13px' }}>
@@ -52,7 +72,20 @@ export default function BettingTable({
           </tr>
         </thead>
         <tbody>
-          {entries.map((entry, index) => (
+          {entries.map((entry, index) => {
+            // running total candidate (cumulative). Prefer explicit entry.runningTotal
+            const bsProfitRaw = entry.game?.bettingState?.totalProfit;
+            const bsProfit = parseNumericCandidate(bsProfitRaw);
+            const taRaw = entry.teamAggregatedProfit;
+            const taProfit = parseNumericCandidate(taRaw);
+            const rtRaw = entry.runningTotal;
+            const rtProfit = parseNumericCandidate(rtRaw);
+
+            const runningValue = (typeof rtProfit === 'number' && !Number.isNaN(rtProfit)) ? rtProfit
+              : (typeof bsProfit === 'number' && !Number.isNaN(bsProfit) ? bsProfit : (typeof taProfit === 'number' && !Number.isNaN(taProfit) ? taProfit : null));
+            // selection logic done above; no verbose debug logging in production
+
+            return (
             <tr key={index} style={{ 
               borderBottom: '1px solid var(--color-border-light)',
               background: entry.isPast ? 
@@ -137,47 +170,37 @@ export default function BettingTable({
 
               {showProfitColumn && (
                 <td style={{ padding: '8px', textAlign: 'center', fontSize: '12px', fontWeight: '600' }}>
-                  {(() => {
-                    // Selection strategy:
-                    // - For multi-team views (homepage) prefer the per-team aggregated profit
-                    //   (computed by BettingAnalysis) or the game.bettingState.totalProfit if present.
-                    // - For single-team views (team page) prefer the per-row runningTotal.
-                    // Fallback to whichever value is available.
-                    let value = null;
-                    if (!isSingleTeamView) {
-                      if (typeof entry.teamAggregatedProfit === 'number') {
-                        value = entry.teamAggregatedProfit;
-                      } else if (typeof entry.game?.bettingState?.totalProfit === 'number') {
-                        value = entry.game.bettingState.totalProfit;
-                      } else if (typeof entry.runningTotal === 'number') {
-                        value = entry.runningTotal;
-                      }
-                    } else {
-                      if (typeof entry.runningTotal === 'number') {
-                        value = entry.runningTotal;
-                      } else if (typeof entry.game?.bettingState?.totalProfit === 'number') {
-                        value = entry.game.bettingState.totalProfit;
-                      } else if (typeof entry.teamAggregatedProfit === 'number') {
-                        value = entry.teamAggregatedProfit;
-                      }
-                    }
-                    if (value === null || value === undefined) return <span style={{ color: 'var(--color-text-secondary)' }}>—</span>;
-                    const formatted = `${value < 0 ? '-' : ''}${formatCurrency(Math.abs(value))}`;
-                    const color = value > 0 ? 'var(--color-success)' : value < 0 ? 'var(--color-error)' : 'var(--color-text-primary)';
-                    return <span style={{ color }}>{formatted}</span>;
-                  })()}
+                  {runningValue === null ? (
+                    <span style={{ color: 'var(--color-text-secondary)' }}>—</span>
+                  ) : (
+                    (() => {
+                      const formatted = `${runningValue < 0 ? '-' : ''}${formatCurrency(Math.abs(runningValue))}`;
+                      const color = runningValue > 0 ? 'var(--color-success)' : runningValue < 0 ? 'var(--color-error)' : 'var(--color-text-primary)';
+                      return <span style={{ color }}>{formatted}</span>;
+                    })()
+                  )}
                 </td>
               )}
 
               <td style={{ padding: '8px', textAlign: 'right', fontSize: '12px', fontWeight: '600', color: 'var(--color-error)' }}>
                 {(() => {
                   const seqNum = entry.game?.bettingState?.sequence ?? entry.sequence;
-                  const seqInvested = seqNum > 1 ? calculateTotalInvested(seqNum - 1) : 0.00;
-                  return `-${formatCurrency(seqInvested)}`;
+                  // Prefer an authoritative precomputed value when available (entry.sequenceInvested)
+                  // which already includes the current bet. Otherwise compute total including current bet.
+                  let seqInvested = null;
+                  if (typeof entry.sequenceInvested === 'number' && !Number.isNaN(entry.sequenceInvested)) {
+                    seqInvested = entry.sequenceInvested;
+                  } else if (typeof seqNum === 'number' && seqNum > 0) {
+                    seqInvested = calculateTotalInvested(seqNum);
+                  } else {
+                    seqInvested = 0.00;
+                  }
+                  return `-${formatCurrency(Math.round(seqInvested * 100) / 100)}`;
                 })()}
               </td>
             </tr>
-          ))}
+          );
+          })}
         </tbody>
       </table>
     </div>
