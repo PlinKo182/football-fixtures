@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import GameCard from '@/app/components/GameCard';
 import ThemeToggle from '@/app/components/ThemeToggle';
+import BettingAnalysis from '@/app/components/BettingAnalysis';
 
 // Remove generateStaticParams to allow dynamic routes
 // export async function generateStaticParams() {
@@ -83,47 +84,24 @@ export default async function TeamPage({ params }) {
       </header>
 
       <main className="container">
-        {/* All games section */}
+        {/* Betting System Analysis */}
         {games.length > 0 && (
-          <div className="matches-container">
+          <div className="matches-container" style={{ marginBottom: '32px' }}>
             <div style={{ 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'space-between', 
               marginBottom: '24px'
             }}>
-              <h2 className="section-title">All Games</h2>
-              <div style={{ 
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px',
-                fontSize: '14px',
-                color: 'var(--color-text-secondary)'
-              }}>
-                <span>{games.length} games</span>
-                {historicalGames.length > 0 && (
-                  <span style={{ 
-                    background: 'var(--color-warning-light)',
-                    color: 'var(--color-warning-dark)',
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    fontSize: '12px',
-                    fontWeight: '500'
-                  }}>
-                    +{historicalGames.length} historical
-                  </span>
-                )}
-              </div>
+              <h2 className="section-title">🎯 Martingale Betting Analysis</h2>
             </div>
             
-            {/* Games list */}
-            <div>
-              {games.map((game, index) => (
-                <GameCard key={game._id} game={game} isRecent={new Date(game.date) < new Date()} />
-              ))}
-            </div>
+            {/* Betting State Display */}
+            <BettingAnalysis teamName={teamName} games={games} />
           </div>
         )}
+
+
 
         {/* Empty state */}
         {games.length === 0 && (

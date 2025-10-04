@@ -1,6 +1,7 @@
 import Link from 'next/link';
+import BettingInfo from './BettingInfo';
 
-export default function GameCard({ game, isRecent = false, highlightTeam = null, isCompact = false }) {
+export default function GameCard({ game, isRecent = false, highlightTeam = null, isCompact = false, showBetting = false }) {
   const gameDate = new Date(game.date);
   const now = new Date();
   const msDiff = gameDate - now;
@@ -79,6 +80,24 @@ export default function GameCard({ game, isRecent = false, highlightTeam = null,
         {status.show && (
           <div className="match-status" style={{ marginLeft: '16px' }}>
             <span className={`status-badge ${status.class}`}>{status.text}</span>
+          </div>
+        )}
+
+        {/* Betting Info - só aparece se showBetting for true */}
+        {showBetting && (
+          <div className="betting-section" style={{ marginLeft: '16px' }}>
+            <BettingInfo 
+              gameId={game.id || `${game.homeTeam}-${game.awayTeam}-${game.date}`}
+              homeTeam={game.homeTeam}
+              awayTeam={game.awayTeam}
+              gameDate={game.date}
+              gameStatus={game.status}
+              gameResult={game.homeScore !== null && game.awayScore !== null ? {
+                homeScore: game.homeScore,
+                awayScore: game.awayScore
+              } : null}
+              bettingState={game.bettingState}
+            />
           </div>
         )}
       </div>

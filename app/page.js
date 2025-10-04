@@ -1,10 +1,87 @@
 import { getAllGames } from '@/lib/dataLoader';
 import { TEAMS } from '@/lib/teams';
+import { getTeamGamesWithHistory } from '@/lib/teamLoader';
 import Link from 'next/link';
 import GameCard from './components/GameCard';
 import AutoDataLoader from './components/AutoDataLoader';
 import ImportHistoricalButton from './components/ImportHistoricalButton';
 import ThemeToggle from './components/ThemeToggle';
+
+const MARTINGALE_PROGRESSION = [
+  0.10, 0.18, 0.32, 0.57, 1.02, 1.78, 3.11, 5.43, 9.47, 16.52,
+  28.08, 49.32, 86.31, 150.73, 263.28, 460.24, 804.42, 1407.73, 2463.52, 2000.00
+];
+
+async function calculateTeamBettingState(teamName) {
+  try {
+    const teamData = await getTeamGamesWithHistory(teamName, true);
+    if (!teamData || !teamData.games) return null;
+
+    // Convert to expected format
+    const games = teamData.games.map(game => ({
+      homeTeam: game.homeTeam || (game.isHome ? teamName : game.opponent),
+      awayTeam: game.awayTeam || (game.isHome ? game.opponent : teamName),
+      date: game.date,
+      homeScore: game.homeScore !== null && game.homeScore !== undefined ? 
+                 game.homeScore : 
+                 (game.isHome ? game.teamScore : game.opponentScore),
+      awayScore: game.awayScore !== null && game.awayScore !== undefined ? 
+                 game.awayScore : 
+                 (game.isHome ? game.opponentScore : game.teamScore),
+    }));
+
+    // Filter finished games, sorted by date (oldest first)
+    const finishedGames = games
+      .filter(game => {
+        const gameDate = new Date(game.date);
+        const now = new Date();
+        return gameDate < now && 
+               game.homeScore !== null && game.homeScore !== undefined &&
+               game.awayScore !== null && game.awayScore !== undefined;
+      })
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    if (finishedGames.length === 0) {
+      return { sequence: 1, nextBet: 0.10, totalProfit: 0 };
+    }
+
+    // Simulate betting through historical games
+    let currentSequence = 1;
+    let totalProfit = 0;
+
+    for (const game of finishedGames) {
+      const isDraw = game.homeScore === game.awayScore;
+      
+      if (isDraw) {
+        // Win! Calculate profit and reset sequence
+        const betAmount = MARTINGALE_PROGRESSION[Math.min(currentSequence - 1, MARTINGALE_PROGRESSION.length - 1)];
+        const winnings = betAmount * 3.0;
+        let totalInvested = 0;
+        for (let i = 0; i < currentSequence; i++) {
+          totalInvested += MARTINGALE_PROGRESSION[Math.min(i, MARTINGALE_PROGRESSION.length - 1)];
+        }
+        const sequenceProfit = winnings - totalInvested;
+        totalProfit += sequenceProfit;
+        currentSequence = 1; // Reset
+      } else {
+        // Loss, advance sequence
+        currentSequence = Math.min(currentSequence + 1, MARTINGALE_PROGRESSION.length);
+      }
+    }
+
+    const nextBetAmount = MARTINGALE_PROGRESSION[Math.min(currentSequence - 1, MARTINGALE_PROGRESSION.length - 1)];
+
+    return {
+      sequence: currentSequence,
+      nextBet: nextBetAmount,
+      totalProfit: Math.round(totalProfit * 100) / 100
+    };
+
+  } catch (error) {
+    console.error(`Error calculating betting state for ${teamName}:`, error);
+    return null;
+  }
+}
 
 // Function to determine which team is of interest (from our teams)
 function getTeamOfInterest(homeTeam, awayTeam) {
@@ -13,7 +90,7 @@ function getTeamOfInterest(homeTeam, awayTeam) {
   return null;
 }
 
-async function getUpcomingGames() {
+async function getUpcomingGamesWithBetting() {
   try {
     const allGames = await getAllGames();
     
@@ -58,16 +135,27 @@ async function getUpcomingGames() {
         new Date(g.date).getTime() === new Date(game.date).getTime()
       )
     );
+
+    // Calculate betting states for teams of interest
+    const gamesWithBetting = await Promise.all(
+      uniqueGames.map(async (game) => {
+        let bettingState = null;
+        
+        if (game.teamOfInterest) {
+          bettingState = await calculateTeamBettingState(game.teamOfInterest);
+        }
+
+        return {
+          ...game,
+          date: new Date(game.date).toISOString(),
+          bettingState
+        };
+      })
+    );
     
-
-
-    return uniqueGames
+    return gamesWithBetting
       .sort((a, b) => new Date(a.date) - new Date(b.date))
-      .slice(0, 10)
-      .map(game => ({
-        ...game,
-        date: new Date(game.date).toISOString(),
-      }));
+      .slice(0, 10);
     
   } catch (error) {
     console.error('❌ Error fetching upcoming games:', error);
@@ -77,7 +165,7 @@ async function getUpcomingGames() {
 }
 
 export default async function Home() {
-  const upcomingGames = await getUpcomingGames();
+  const upcomingGames = await getUpcomingGamesWithBetting();
   const hasData = upcomingGames.length > 0;
 
   return (
@@ -88,7 +176,7 @@ export default async function Home() {
         <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h1 className="page-title-compact">Football Fixtures</h1>
-            <p className="page-subtitle-compact">Next matches • Updated automatically</p>
+            <p className="page-subtitle-compact">Next matches • Martingale betting system • Updated automatically</p>
           </div>
           <ThemeToggle />
         </div>
@@ -111,6 +199,22 @@ export default async function Home() {
 
 
 
+        {/* Martingale System Info */}
+        {upcomingGames.length > 0 && (
+          <div style={{ background: 'var(--color-accent-light)', border: '1px solid var(--color-accent)', borderRadius: '8px', padding: '16px', margin: '24px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '16px', marginRight: '8px' }}>🎯</span>
+              <h3 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--color-accent-dark)', margin: '0' }}>
+                Martingale Betting System
+              </h3>
+            </div>
+            <p style={{ fontSize: '13px', color: 'var(--color-accent-dark)', margin: '0', lineHeight: '1.4' }}>
+              Click ⚡ next to any match to start betting on draws. System starts at €0.10, doubles on loss, resets on draw win. 
+              Odds default to 3.0. Each successful sequence yields €0.20 profit.
+            </p>
+          </div>
+        )}
+
         <div className="matches-container">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
             <h2 className="section-title">Upcoming Matches</h2>
@@ -127,6 +231,7 @@ export default async function Home() {
                   game={game} 
                   highlightTeam={game.teamOfInterest}
                   isRecent={false}
+                  showBetting={true}
                 />
               ))}
             </div>

@@ -39,6 +39,12 @@ const GameSchema = new mongoose.Schema({
     type: String,
     unique: true,
     sparse: true
+  },
+  customOdds: {
+    draw: {
+      type: Number,
+      default: 3.0
+    }
   }
 }, {
   timestamps: true

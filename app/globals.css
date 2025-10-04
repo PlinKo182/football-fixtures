@@ -507,3 +507,251 @@ body {
     font-size: 24px;
   }
 }
+
+/* Betting System Styles */
+.betting-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.betting-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.betting-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 4px 8px;
+  border-left: 3px solid var(--color-success);
+  background: var(--color-surface);
+  border-radius: 4px;
+  min-width: 80px;
+}
+
+.betting-sequence {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sequence-number {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  background: var(--color-border-light);
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+.bet-amount {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.betting-stats {
+  display: flex;
+  gap: 6px;
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+.invested {
+  color: var(--color-error);
+  font-weight: 500;
+}
+
+.potential {
+  color: var(--color-success);
+  font-weight: 500;
+}
+
+.betting-actions {
+  position: relative;
+}
+
+.betting-action-btn {
+  background: var(--color-accent);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.betting-action-btn:hover {
+  background: var(--color-primary-600);
+  transform: scale(1.1);
+}
+
+.betting-start-btn {
+  background: var(--color-success);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.betting-start-btn:hover {
+  background: var(--color-success);
+  opacity: 0.9;
+}
+
+.betting-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 12px;
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  min-width: 200px;
+}
+
+.odds-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.odds-input label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.odds-input input {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  width: 60px;
+  color: var(--color-text-primary);
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-bet {
+  background: var(--color-accent);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-bet:hover {
+  opacity: 0.9;
+}
+
+.result-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-result {
+  flex: 1;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-draw {
+  background: #e6f7e6;
+  color: var(--color-success);
+}
+
+.btn-draw:hover {
+  background: var(--color-success);
+  color: white;
+}
+
+.btn-loss {
+  background: #ffe6e6;
+  color: var(--color-error);
+}
+
+.btn-loss:hover {
+  background: var(--color-error);
+  color: white;
+}
+
+/* Dark mode betting styles */
+[data-theme="dark"] .betting-indicator {
+  background: var(--color-surface-dark);
+  border-left-color: var(--color-success);
+}
+
+[data-theme="dark"] .sequence-number {
+  color: var(--color-text-secondary-dark);
+  background: var(--color-border-dark);
+}
+
+[data-theme="dark"] .bet-amount {
+  color: var(--color-text-primary-dark);
+}
+
+[data-theme="dark"] .betting-dropdown {
+  background: var(--color-surface-dark);
+  border-color: var(--color-border-dark);
+}
+
+[data-theme="dark"] .odds-input input {
+  background: var(--color-bg-dark);
+  border-color: var(--color-border-dark);
+  color: var(--color-text-primary-dark);
+}
+
+[data-theme="dark"] .odds-input label {
+  color: var(--color-text-secondary-dark);
+}
+
+/* Team card styles */
+.team-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.team-card:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-light);
+}
+
+[data-theme="dark"] .team-card {
+  background: var(--color-surface-dark);
+  border-color: var(--color-border-dark);
+}
+
+[data-theme="dark"] .team-card:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-light);
+}
