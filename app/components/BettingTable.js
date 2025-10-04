@@ -81,8 +81,16 @@ export default function BettingTable({
             const rtRaw = entry.runningTotal;
             const rtProfit = parseNumericCandidate(rtRaw);
 
-            const runningValue = (typeof rtProfit === 'number' && !Number.isNaN(rtProfit)) ? rtProfit
-              : (typeof bsProfit === 'number' && !Number.isNaN(bsProfit) ? bsProfit : (typeof taProfit === 'number' && !Number.isNaN(taProfit) ? taProfit : null));
+            let runningValue = null;
+            if (!isSingleTeamView) {
+              // Mixed-team views (homepage): prefer authoritative server/team value first
+              runningValue = (typeof bsProfit === 'number' && !Number.isNaN(bsProfit)) ? bsProfit
+                : (typeof taProfit === 'number' && !Number.isNaN(taProfit) ? taProfit : (typeof rtProfit === 'number' && !Number.isNaN(rtProfit) ? rtProfit : null));
+            } else {
+              // Single-team view: prefer the per-game running total (chronological simulation)
+              runningValue = (typeof rtProfit === 'number' && !Number.isNaN(rtProfit)) ? rtProfit
+                : (typeof bsProfit === 'number' && !Number.isNaN(bsProfit) ? bsProfit : (typeof taProfit === 'number' && !Number.isNaN(taProfit) ? taProfit : null));
+            }
             // selection logic done above; no verbose debug logging in production
 
             return (
