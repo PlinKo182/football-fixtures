@@ -1,3 +1,7 @@
+// archived placeholder for /api/analyze-mongodb
+export default function handler() {
+  return new Response(JSON.stringify({ archived: true, route: '/api/analyze-mongodb' }), { status: 200 });
+}
 // Archived copy of app/api/analyze-mongodb/route.js
 
 import connectToDatabase from '../../../lib/mongodb.js';

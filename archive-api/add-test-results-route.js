@@ -1,3 +1,7 @@
+// archived placeholder for /api/add-test-results
+export default function handler() {
+  return new Response(JSON.stringify({ archived: true, route: '/api/add-test-results' }), { status: 200 });
+}
 // Archived copy of app/api/add-test-results/route.js
 
 import connectToDatabase from '../../../lib/mongodb.js';

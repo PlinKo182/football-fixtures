@@ -1,3 +1,7 @@
+// archived placeholder for /api/basic-test
+export default function handler() {
+  return new Response(JSON.stringify({ archived: true, route: '/api/basic-test' }), { status: 200 });
+}
 // Archived copy of app/api/basic-test/route.js
 
 import { getTeamGamesOptimized } from '../../../lib/teamLoader.js';
