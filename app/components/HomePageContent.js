@@ -143,6 +143,7 @@ async function getUpcomingGamesWithBetting() {
       };
     });
     
+    // Return games ordered by date ascending so the closest upcoming date is first
     return gamesWithBetting
       .sort((a, b) => new Date(a.date) - new Date(b.date))
       .slice(0, 10);

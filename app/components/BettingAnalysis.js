@@ -29,7 +29,7 @@ function calculateProfitIfWin(sequenceNumber, odds = 3.0) {
   return Math.round((winnings - totalInvested) * 100) / 100;
 }
 
-function createCompleteGameList(games, history) {
+function createCompleteGameList(games, history, opts = {}) {
   // Sort chronologically for sequence calculation (oldest first)
   const allGamesSorted = games.sort((a, b) => new Date(a.date) - new Date(b.date));
   const completeGameList = [];
@@ -127,7 +127,9 @@ function createCompleteGameList(games, history) {
     completeGameList.push(gameEntry);
   }
   
-  // Return reversed list (most recent first for display)
+  // Return reversed list (most recent first for display) unless caller
+  // requests preserving chronological order (oldest→newest).
+  if (opts && opts.preserveOrder) return completeGameList;
   return completeGameList.reverse();
 }
 
@@ -268,7 +270,7 @@ export default function BettingAnalysis({ teamName, games, showEmptyGamesTable =
         // Create complete game list with betting data (all games chronologically)
         // DEBUG: compute and log the complete list before setting state
         try {
-          const completeList = createCompleteGameList(games, history);
+          const completeList = createCompleteGameList(games, history, { preserveOrder: !!forceFutureGames });
           console.log('DEBUG BettingAnalysis: completeGameList length=', completeList.length);
           console.log('DEBUG BettingAnalysis: completeGameList sample=', completeList.slice(0,6));
           // For mixed-team views (homepage) compute an accurate per-team totalProfit
