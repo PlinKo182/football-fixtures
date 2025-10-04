@@ -24,7 +24,7 @@ export default function GameCard({ game, isRecent = false, highlightTeam = null,
   const status = getStatusInfo();
 
   return (
-    <div className={`match-card ${isNext24h ? 'match-card-urgent' : ''}`}>
+    <div className={`match-card ${isNext24h ? 'match-card-urgent' : ''} ${isCompact ? 'match-card-compact' : ''}`}>
       <div className="match-row">
         <div style={{ width: '120px', display: 'flex', alignItems: 'center', height: '40px', marginRight: '48px', position: 'relative' }}>
           {highlightTeam && (

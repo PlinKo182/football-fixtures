@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import EditableOdds from './EditableOdds';
+import BettingSummary from './BettingSummary';
+import BettingTable from './BettingTable';
 
 const MARTINGALE_PROGRESSION = [
   0.10, 0.18, 0.32, 0.57, 1.02, 1.78, 3.11, 5.43, 9.47, 16.52,
@@ -117,7 +119,7 @@ function createCompleteGameList(games, history) {
   return completeGameList.reverse();
 }
 
-export default function BettingAnalysis({ teamName, games }) {
+export default function BettingAnalysis({ teamName, games, showEmptyGamesTable = false, showTeamColumn = false, showTeamColumnLeft = false, showTimeColumn = false, hideResultColumn = false, forceFutureGames = false }) {
   const [bettingState, setBettingState] = useState(null);
   const [loading, setLoading] = useState(true);
   const [gameHistory, setGameHistory] = useState([]);
@@ -127,8 +129,19 @@ export default function BettingAnalysis({ teamName, games }) {
     async function calculateBettingHistory() {
       try {
         setLoading(true);
+        // DEBUG: log input games coming into this component
+        try {
+          console.log('DEBUG BettingAnalysis: input games count=', Array.isArray(games) ? games.length : 'not-array');
+          console.log('DEBUG BettingAnalysis: sample input games=', (Array.isArray(games) && games.slice(0,5)) || games);
+        } catch(e) {
+          console.log('DEBUG BettingAnalysis: error logging input games', e);
+        }
         
-        // Filter only finished games with results, sorted by date (oldest first)
+  // Detect if the games array contains a single teamOfInterest or multiple
+  const teamSet = new Set((games || []).map(g => g.teamOfInterest).filter(Boolean));
+  const isSingleTeamView = teamSet.size === 1;
+
+  // Filter only finished games with results, sorted by date (oldest first)
         const finishedGames = games
           .filter(game => {
             const gameDate = new Date(game.date);
@@ -151,15 +164,21 @@ export default function BettingAnalysis({ teamName, games }) {
             status: 'no-data'
           });
           setGameHistory([]);
-          return;
+          if (!showEmptyGamesTable) {
+            return;
+          }
+          // if showEmptyGamesTable is true, continue and build the complete list (history is empty)
         }
 
-        // Simulate betting through all historical games
+  // If requested, force all games to be treated as future/upcoming (no scores)
+  const processedGames = forceFutureGames ? games.map(g => ({ ...g, homeScore: null, awayScore: null, status: 'scheduled' })) : games;
+
+  // Simulate betting through all historical games
         let currentSequence = 1;
         let totalProfit = 0.00;
         const history = [];
 
-        for (const game of finishedGames) {
+  for (const game of finishedGames) {
           const isDraw = game.homeScore === game.awayScore;
           const betAmount = MARTINGALE_PROGRESSION[Math.min(currentSequence - 1, MARTINGALE_PROGRESSION.length - 1)];
           const sequenceInvested = currentSequence > 1 ? calculateTotalInvested(currentSequence - 1) : 0.00;
@@ -226,7 +245,33 @@ export default function BettingAnalysis({ teamName, games }) {
         setGameHistory(history);
 
         // Create complete game list with betting data (all games chronologically)
-        setAllGamesWithBetting(createCompleteGameList(games, history));
+        // DEBUG: compute and log the complete list before setting state
+        try {
+          const completeList = createCompleteGameList(games, history);
+          console.log('DEBUG BettingAnalysis: completeGameList length=', completeList.length);
+          console.log('DEBUG BettingAnalysis: completeGameList sample=', completeList.slice(0,6));
+          setAllGamesWithBetting(completeList);
+        } catch (e) {
+          console.error('DEBUG BettingAnalysis: error creating completeGameList', e);
+          setAllGamesWithBetting([]);
+        }
+        // If this component is rendering a mixed set of teams (homepage), prefer
+        // to show per-game bettingState (which the server attached) rather than
+        // the aggregated calculation above which assumes a single team.
+        if (!isSingleTeamView) {
+          // Aggregate totalProfit across teams (if available) so top summary shows something useful
+          const aggTotal = (games || []).reduce((sum, g) => sum + ((g.bettingState?.totalProfit) || 0), 0);
+          setBettingState(prev => ({
+            teamName: 'Multiple',
+            currentSequence: '-',
+            nextBetAmount: 0.00,
+            sequenceInvested: 0.00,
+            totalProfit: Math.round(aggTotal * 100) / 100,
+            potentialProfit: 0.00,
+            gamesAnalyzed: finishedGames.length,
+            status: 'mixed'
+          }));
+        }
         
       } catch (error) {
         console.error('Error calculating betting history:', error);
@@ -248,7 +293,7 @@ export default function BettingAnalysis({ teamName, games }) {
     }
 
     calculateBettingHistory();
-  }, [teamName, games]);
+  }, [teamName, games, showEmptyGamesTable, forceFutureGames]);
 
   if (loading) {
     return (
@@ -270,6 +315,9 @@ export default function BettingAnalysis({ teamName, games }) {
     return null;
   }
 
+  // If all games are future (no past/completed entries), hide the Status column
+  const showStatusColumn = (allGamesWithBetting || []).some(entry => entry.isPast === true);
+
   return (
     <div style={{ 
       background: 'var(--color-surface)', 
@@ -277,180 +325,17 @@ export default function BettingAnalysis({ teamName, games }) {
       borderRadius: '8px',
       overflow: 'hidden'
     }}>
-      {/* Current State Summary */}
-      <div style={{ 
-        background: 'var(--color-accent-light)', 
-        padding: '16px',
-        borderBottom: '1px solid var(--color-border-light)'
-      }}>
-        <div style={{ 
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-          gap: '16px',
-          fontSize: '14px'
-        }}>
-          <div>
-            <div style={{ color: 'var(--color-text-secondary)', fontSize: '12px' }}>Current Sequence</div>
-            <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--color-accent-dark)' }}>
-              #{bettingState.currentSequence}
-            </div>
-          </div>
-          <div>
-            <div style={{ color: 'var(--color-text-secondary)', fontSize: '12px' }}>Next Bet</div>
-            <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--color-accent-dark)' }}>
-              {formatCurrency(bettingState.nextBetAmount)}
-            </div>
-          </div>
-          <div>
-            <div style={{ color: 'var(--color-text-secondary)', fontSize: '12px' }}>Invested in Sequence</div>
-            <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--color-error)' }}>
-              -{formatCurrency(bettingState.sequenceInvested)}
-            </div>
-          </div>
-          <div>
-            <div style={{ color: 'var(--color-text-secondary)', fontSize: '12px' }}>Potential Profit</div>
-            <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--color-success)' }}>
-              +{formatCurrency(bettingState.potentialProfit)}
-            </div>
-          </div>
-          <div>
-            <div style={{ color: 'var(--color-text-secondary)', fontSize: '12px' }}>Total Profit</div>
-            <div style={{ 
-              fontSize: '18px', 
-              fontWeight: '600', 
-              color: bettingState.totalProfit >= 0 ? 'var(--color-success)' : 'var(--color-error)'
-            }}>
-              {bettingState.totalProfit >= 0 ? '+' : ''}{formatCurrency(bettingState.totalProfit)}
-            </div>
-          </div>
-        </div>
-      </div>
+      <BettingSummary bettingState={bettingState} />
 
-      {/* Complete Martingale Table - All Games Chronologically */}
       {allGamesWithBetting.length > 0 && (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', fontSize: '13px' }}>
-            <thead>
-              <tr style={{ background: 'var(--color-bg)', borderBottom: '1px solid var(--color-border-light)' }}>
-                <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600' }}>Date</th>
-                <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600' }}>Match</th>
-                <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '600' }}>Result</th>
-                <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '600' }}>Seq#</th>
-                <th style={{ padding: '12px 8px', textAlign: 'right', fontWeight: '600' }}>Bet</th>
-                <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '600' }}>Odds</th>
-                <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '600' }}>Status</th>
-                <th style={{ padding: '12px 8px', textAlign: 'right', fontWeight: '600' }}>Profit/Loss</th>
-                <th style={{ padding: '12px 8px', textAlign: 'right', fontWeight: '600' }}>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {allGamesWithBetting.map((entry, index) => (
-                <tr key={index} style={{ 
-                  borderBottom: '1px solid var(--color-border-light)',
-                  background: entry.isPast ? 
-                    (entry.isDraw ? 'var(--color-success-light)' : 'var(--color-error-light)') :
-                    'var(--color-bg)'
-                }}>
-                  <td style={{ padding: '8px', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-                    {new Date(entry.game.date).toLocaleDateString('en-GB', { 
-                      day: '2-digit', 
-                      month: 'short',
-                      year: '2-digit'
-                    })}
-                  </td>
-                  <td style={{ padding: '8px', fontSize: '12px' }}>
-                    {entry.game.homeTeam} vs {entry.game.awayTeam}
-                  </td>
-                  <td style={{ padding: '8px', textAlign: 'center', fontSize: '12px', fontWeight: '600' }}>
-                    {entry.isPast ? 
-                      `${entry.game.homeScore}-${entry.game.awayScore}` : 
-                      <span style={{ color: 'var(--color-text-secondary)' }}>-</span>
-                    }
-                  </td>
-                  <td style={{ padding: '8px', textAlign: 'center', fontSize: '12px', fontWeight: '600' }}>
-                    #{entry.sequence}
-                  </td>
-                  <td style={{ padding: '8px', textAlign: 'right', fontSize: '12px', fontWeight: '600' }}>
-                    {formatCurrency(entry.betAmount)}
-                  </td>
-                  <td style={{ padding: '8px', textAlign: 'center', fontSize: '12px', fontWeight: '600' }}>
-                    <EditableOdds 
-                      gameId={entry.game._id}
-                      homeTeam={entry.game.homeTeam}
-                      awayTeam={entry.game.awayTeam}
-                      date={entry.game.date}
-                      // If drawOdds is explicitly null (pending), pass null so editor shows blank
-                      currentOdds={typeof entry.game.drawOdds === 'number' ? entry.game.drawOdds : (entry.game.customOdds?.draw ?? null)}
-                      onOddsUpdate={(newOdds) => {
-                        // Atualizar o estado local para refletir a nova odd imediatamente
-                        setAllGamesWithBetting(prev => prev.map(g => {
-                          try {
-                            if (!g.game) return g;
-                            const dateMatch = new Date(g.game.date).toISOString() === new Date(entry.game.date).toISOString();
-                            const opponentMatch = (g.game.opponent || g.game.awayTeam) === (entry.game.opponent || entry.game.awayTeam);
-                            const isHomeMatch = !!g.game.isHome === !!entry.game.isHome;
-
-                            if (dateMatch && opponentMatch && isHomeMatch) {
-                              return {
-                                ...g,
-                                game: {
-                                  ...g.game,
-                                  drawOdds: newOdds,
-                                  hasOdds: true
-                                }
-                              };
-                            }
-                          } catch (e) {
-                            return g;
-                          }
-                          return g;
-                        }));
-                        // Também logar para debug
-                        console.log('Odds atualizadas (UI):', entry.game._id, newOdds);
-                      }}
-                    />
-                  </td>
-                  <td style={{ 
-                    padding: '8px', 
-                    textAlign: 'center', 
-                    fontSize: '11px', 
-                    fontWeight: '600',
-                    color: entry.isPast ? 
-                      (entry.result === 'WIN' ? 'var(--color-success)' : 'var(--color-error)') :
-                      entry.gameStatus === 'POSTPONED' ? 'var(--color-warning)' :
-                      entry.gameStatus === 'CANCELLED' ? 'var(--color-error)' :
-                      'var(--color-accent)'
-                  }}>
-                    {entry.isPast ? entry.result : entry.gameStatus}
-                  </td>
-                  <td style={{ 
-                    padding: '8px', 
-                    textAlign: 'right', 
-                    fontSize: '12px', 
-                    fontWeight: '600',
-                    color: entry.isPast ? 
-                      (entry.profit > 0 ? 'var(--color-success)' : 'var(--color-error)') :
-                      'var(--color-text-secondary)'
-                  }}>
-                    {entry.isPast ? 
-                      (entry.profit > 0 ? '+' : '') + formatCurrency(entry.profit || -entry.betAmount) :
-                      <span style={{ color: 'var(--color-text-secondary)' }}>-</span>
-                    }
-                  </td>
-                  <td style={{ 
-                    padding: '8px', 
-                    textAlign: 'right', 
-                    fontSize: '12px', 
-                    fontWeight: '600',
-                    color: entry.runningTotal >= 0 ? 'var(--color-success)' : 'var(--color-error)'
-                  }}>
-                    {entry.runningTotal >= 0 ? '+' : ''}{formatCurrency(entry.runningTotal)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <BettingTable
+          entries={allGamesWithBetting}
+          showTeamColumnLeft={showTeamColumnLeft}
+          showTimeColumn={showTimeColumn}
+          hideResultColumn={hideResultColumn}
+          showStatusColumn={showStatusColumn}
+          showTeamColumn={showTeamColumn}
+        />
       )}
 
       {allGamesWithBetting.length === 0 && (

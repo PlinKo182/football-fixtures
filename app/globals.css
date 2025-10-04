@@ -147,6 +147,20 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), -2px 0 4px rgba(255, 107, 53, 0.1);
 }
 
+/* Ensure urgent left border is visible and identical inside matches lists/containers */
+.matches-container .match-card-urgent {
+  /* Reinforce border and background so page-specific containers don't mask it */
+  border-left: 3px solid #ff6b35 !important;
+  background: linear-gradient(90deg, rgba(255, 107, 53, 0.02) 0%, var(--color-surface) 20%) !important;
+  /* Keep hover effect consistent */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+
+.matches-container .match-card-urgent:hover {
+  border-left-color: #e55a2b !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), -2px 0 4px rgba(255, 107, 53, 0.1) !important;
+}
+
 .match-row {
   display: flex;
   align-items: center;
@@ -435,6 +449,114 @@ body {
 
 .matches-container {
   margin-top: 32px;
+}
+
+/* Table styles for homepage */
+.matches-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: transparent;
+}
+.matches-table thead th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-surface);
+}
+.matches-table tbody tr {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border-light);
+}
+.matches-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+/* Urgent row indicator for table (24h) */
+.matches-table tbody tr.urgent {
+  position: relative;
+}
+.matches-table tbody tr.urgent::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 6px;
+  bottom: 6px;
+  width: 6px;
+  background: #ff6b35;
+  border-radius: 3px;
+}
+.matches-table tbody tr.urgent:hover::before {
+  background: #e55a2b;
+}
+
+/* When table is placed inside a surface wrapper, align the left indicator visually to appear as a subtle left-border
+   Matching the .match-card-urgent look used on team pages */
+.matches-table-container {
+  position: relative;
+}
+.matches-table-container table {
+  position: relative;
+}
+.matches-table tbody tr.urgent::before {
+  /* move the indicator visually inside the table surface */
+  left: 8px;
+}
+
+/* Compact / table-like rows for match lists (used on homepage) */
+.match-card-compact {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  margin-bottom: 0;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: 1px solid var(--color-border-light);
+  background: transparent;
+}
+
+.matches-container > .match-card-compact:first-child {
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  border-top: 1px solid var(--color-border-light);
+  background: var(--color-surface);
+}
+
+.matches-container > .match-card-compact + .match-card-compact {
+  border-top: 1px solid var(--color-border-light);
+}
+
+.matches-container > .match-card-compact:last-child {
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  background: var(--color-surface);
+}
+
+/* Ensure inner layout still aligns like table cells */
+.match-card-compact .match-row {
+  width: 100%;
+}
+.match-card-compact .match-meta {
+  width: 120px;
+  text-align: left;
+}
+.match-card-compact .match-teams {
+  display: flex;
+  gap: 12px;
+}
+
+/* Maintain urgent left border even in compact/table mode */
+.match-card-compact.match-card-urgent {
+  border-left: 3px solid #ff6b35 !important;
+  background: linear-gradient(90deg, rgba(255, 107, 53, 0.02) 0%, var(--color-surface) 8%) !important;
+}
+
+.match-card-compact.match-card-urgent:hover {
+  border-left-color: #e55a2b !important;
+  box-shadow: none !important;
 }
 
 /* Update button */
