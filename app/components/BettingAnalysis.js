@@ -333,6 +333,17 @@ export default function BettingAnalysis({ teamName, games, showEmptyGamesTable =
             return { ...entry, teamAggregatedProfit: (typeof finalTeamProfit === 'number' ? Math.round(finalTeamProfit * 100) / 100 : null) };
           });
 
+          // Debug: show a compact sample to verify teamAggregatedProfit / bettingState
+          try {
+            const sample = completeWithTeamProfit.slice(0, 6).map(e => ({
+              team: e.game.teamOfInterest || e.game.homeTeam || e.game.awayTeam,
+              teamAggregatedProfit: e.teamAggregatedProfit,
+              bettingStateTotal: e.game?.bettingState?.totalProfit
+            }));
+            console.log('DEBUG completeWithTeamProfit sample:', sample);
+          } catch (dd) {
+            console.log('DEBUG error preparing sample', dd);
+          }
           setAllGamesWithBetting(completeWithTeamProfit);
           // Ensure the header "Total Profit" shows the latest running total from
           // the complete list (most recent game's runningTotal). This makes the

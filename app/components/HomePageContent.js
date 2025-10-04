@@ -198,7 +198,7 @@ export default async function HomePageContent() {
                 bettingState: g.bettingState || null,
                 isHome: null
               }));
-              return (<BettingAnalysis teamName={"Upcoming"} games={converted} showEmptyGamesTable={true} showTeamColumn={true} showTeamColumnLeft={true} showTimeColumn={true} hideResultColumn={true} forceFutureGames={true} showSummary={false} allowEditExistingOdds={false} showProfitColumn={true} />);
+              return (<BettingAnalysis games={converted} showEmptyGamesTable={true} showTeamColumn={true} showTeamColumnLeft={true} showTimeColumn={true} hideResultColumn={true} forceFutureGames={true} showSummary={false} allowEditExistingOdds={false} showProfitColumn={true} />);
             })()
           ) : (
             <div style={{ padding: '60px', textAlign: 'center', background: 'var(--color-surface)', border: '1px solid var(--color-border-light)', borderRadius: '8px' }}>

@@ -53,7 +53,7 @@ export default function BettingTable({
   // no debug UI in normal mode
 
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <div>
       <table style={{ width: '100%', fontSize: '13px' }}>
         <thead>
           <tr style={{ background: 'var(--color-bg)', borderBottom: '1px solid var(--color-border-light)' }}>
@@ -114,9 +114,9 @@ export default function BettingTable({
 
               <td style={{ padding: '8px', fontSize: '12px', textAlign: 'center' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ width: '45%', textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: '6px', fontWeight: 600 }}>{entry.game.homeTeam}</div>
-                  <div style={{ width: '10%', textAlign: 'center', color: 'var(--color-text-secondary)', fontWeight: 700 }}>- : -</div>
-                  <div style={{ width: '45%', textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', paddingLeft: '6px', fontWeight: 600 }}>{entry.game.awayTeam}</div>
+                  <div style={{ width: '46%', textAlign: 'right', whiteSpace: 'normal', wordBreak: 'break-word', paddingRight: '6px', fontWeight: 600 }}>{entry.game.homeTeam}</div>
+                  <div style={{ width: '8%', textAlign: 'center', color: 'var(--color-text-secondary)', fontWeight: 700, whiteSpace: 'nowrap' }}>- : -</div>
+                  <div style={{ width: '46%', textAlign: 'left', whiteSpace: 'normal', wordBreak: 'break-word', paddingLeft: '6px', fontWeight: 600 }}>{entry.game.awayTeam}</div>
                 </div>
               </td>
 
@@ -128,7 +128,7 @@ export default function BettingTable({
 
               <td style={{ padding: '8px', textAlign: 'center', fontSize: '12px', fontWeight: '600' }}>#{entry.game.bettingState?.sequence || entry.sequence}</td>
 
-              <td style={{ padding: '8px', textAlign: 'center', fontSize: '12px', fontWeight: '600' }}>
+              <td style={{ padding: '8px', textAlign: 'center', fontSize: '12px', fontWeight: '600', color: !isSingleTeamView ? 'var(--color-success)' : 'inherit' }}>
                 {formatCurrency(typeof entry.game.bettingState?.nextBet === 'number' ? entry.game.bettingState.nextBet : entry.betAmount)}
               </td>
 

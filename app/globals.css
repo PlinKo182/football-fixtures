@@ -398,9 +398,10 @@ body {
 
 /* Container and layout */
 .container {
-  max-width: 1000px;
+  /* Increased to provide more horizontal space for tables and cards */
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 16px;
 }
 
 .header {
