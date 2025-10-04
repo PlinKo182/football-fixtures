@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-export default function EditableOdds({ gameId, homeTeam, awayTeam, date, currentOdds, onOddsUpdate }) {
+export default function EditableOdds({ gameId, homeTeam, awayTeam, date, currentOdds, onOddsUpdate, editable = true }) {
   const [isEditing, setIsEditing] = useState(false);
   const [odds, setOdds] = useState(currentOdds);
   const [displayOdds, setDisplayOdds] = useState(currentOdds);
@@ -19,6 +19,23 @@ export default function EditableOdds({ gameId, homeTeam, awayTeam, date, current
     if (odds === currentOdds) {
       setIsEditing(false);
       return;
+    }
+
+    // Optimistic UI update: update display and notify parent immediately,
+    // but keep a snapshot to revert on failure.
+    const previousDisplay = displayOdds;
+    const previousInputText = inputText;
+    const previousOdds = currentOdds;
+
+    setDisplayOdds(odds);
+    if (odds === null || odds === undefined) {
+      setInputText('');
+    } else {
+      setInputText(Number(odds).toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    }
+
+    if (onOddsUpdate) {
+      try { onOddsUpdate(odds); } catch (e) { /* ignore errors from parent */ }
     }
 
     setSaving(true);
@@ -39,17 +56,17 @@ export default function EditableOdds({ gameId, homeTeam, awayTeam, date, current
 
       const result = await response.json();
       if (result.success) {
-        setDisplayOdds(odds);
-        if (odds === null || odds === undefined) {
-          setInputText('');
-        } else {
-          setInputText(String(Number(odds).toLocaleString('pt-PT', { maximumFractionDigits: 2 })));
-        }
-        if (onOddsUpdate) onOddsUpdate(odds);
+        // keep optimistic state
         setIsEditing(false);
       } else {
         console.error('Erro ao salvar odds:', result.error);
-        setOdds(currentOdds);
+        // revert optimistic changes
+        setDisplayOdds(previousDisplay);
+        setInputText(previousInputText);
+        setOdds(previousOdds);
+        if (onOddsUpdate) {
+          try { onOddsUpdate(previousOdds); } catch (e) { }
+        }
       }
     } catch (error) {
       console.error('Erro ao salvar odds:', error);
@@ -164,15 +181,15 @@ export default function EditableOdds({ gameId, homeTeam, awayTeam, date, current
   return (
     <span
       style={{
-        cursor: 'pointer',
+        cursor: editable ? 'pointer' : 'default',
         padding: '2px 4px',
         borderRadius: '3px',
         transition: 'background 0.2s'
       }}
-      onClick={() => setIsEditing(true)}
+      onClick={() => { if (editable) setIsEditing(true); }}
       onMouseEnter={(e) => e.target.style.background = 'var(--color-accent-light)'}
       onMouseLeave={(e) => e.target.style.background = 'transparent'}
-      title="Click to edit odds"
+      title={editable ? "Click to edit odds" : "Edit only on team page"}
     >
       {formatDisplay(displayOdds)}
     </span>

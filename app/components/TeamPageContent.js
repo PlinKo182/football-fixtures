@@ -97,7 +97,7 @@ export default async function TeamPageContent({ params }) {
             <SectionHeader title={`🎯 Martingale Betting Analysis`} />
             
             {/* Betting State Display */}
-            <BettingAnalysis teamName={teamName} games={games} />
+                <BettingAnalysis teamName={teamName} games={games} showProfitColumn={true} allowEditExistingOdds={true} />
           </div>
         )}
 

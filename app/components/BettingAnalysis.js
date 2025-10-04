@@ -119,11 +119,16 @@ function createCompleteGameList(games, history) {
   return completeGameList.reverse();
 }
 
-export default function BettingAnalysis({ teamName, games, showEmptyGamesTable = false, showTeamColumn = false, showTeamColumnLeft = false, showTimeColumn = false, hideResultColumn = false, forceFutureGames = false }) {
+export default function BettingAnalysis({ teamName, games, showEmptyGamesTable = false, showTeamColumn = false, showTeamColumnLeft = false, showTimeColumn = false, hideResultColumn = false, forceFutureGames = false, showSummary = true, allowEditExistingOdds = true, showProfitColumn = false }) {
   const [bettingState, setBettingState] = useState(null);
   const [loading, setLoading] = useState(true);
   const [gameHistory, setGameHistory] = useState([]);
   const [allGamesWithBetting, setAllGamesWithBetting] = useState([]);
+
+  // Determine if this view is for a single team (used to decide how to display P/L)
+  // If `teamName` is provided (team page), always treat as single-team view.
+  const teamSet = new Set((games || []).map(g => g.teamOfInterest).filter(Boolean));
+  const isSingleTeamView = Boolean(teamName) || teamSet.size === 1;
 
   useEffect(() => {
     async function calculateBettingHistory() {
@@ -137,9 +142,7 @@ export default function BettingAnalysis({ teamName, games, showEmptyGamesTable =
           console.log('DEBUG BettingAnalysis: error logging input games', e);
         }
         
-  // Detect if the games array contains a single teamOfInterest or multiple
-  const teamSet = new Set((games || []).map(g => g.teamOfInterest).filter(Boolean));
-  const isSingleTeamView = teamSet.size === 1;
+  // Filter only finished games with results, sorted by date (oldest first)
 
   // Filter only finished games with results, sorted by date (oldest first)
         const finishedGames = games
@@ -250,7 +253,48 @@ export default function BettingAnalysis({ teamName, games, showEmptyGamesTable =
           const completeList = createCompleteGameList(games, history);
           console.log('DEBUG BettingAnalysis: completeGameList length=', completeList.length);
           console.log('DEBUG BettingAnalysis: completeGameList sample=', completeList.slice(0,6));
-          setAllGamesWithBetting(completeList);
+          // For mixed-team views (homepage) compute an accurate per-team totalProfit
+          // by simulating only the finished games for each team independently.
+          const teamGames = {};
+          for (const g of games || []) {
+            const teamKey = g.teamOfInterest || g.homeTeam || g.awayTeam || 'Unknown';
+            if (!teamGames[teamKey]) teamGames[teamKey] = [];
+            teamGames[teamKey].push(g);
+          }
+
+          const teamProfitMap = {};
+          const now = new Date();
+          for (const [teamKey, tGames] of Object.entries(teamGames)) {
+            // Consider only finished games for this team
+            const finished = (tGames || []).filter(g => {
+              const d = new Date(g.date);
+              return d < now && g.homeScore !== null && g.homeScore !== undefined && g.awayScore !== null && g.awayScore !== undefined;
+            }).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            let currentSequence = 1;
+            let totalProfitForTeam = 0.00;
+
+            for (const g of finished) {
+              const isDraw = g.homeScore === g.awayScore;
+              const gameOdds = (typeof g.drawOdds === 'number') ? g.drawOdds : (g.customOdds?.draw || 3.0);
+              if (isDraw) {
+                const seqProfit = calculateProfitIfWin(currentSequence, gameOdds);
+                totalProfitForTeam += seqProfit;
+                currentSequence = 1;
+              } else {
+                currentSequence = Math.min(currentSequence + 1, MARTINGALE_PROGRESSION.length);
+              }
+            }
+
+            teamProfitMap[teamKey] = Math.round(totalProfitForTeam * 100) / 100;
+          }
+
+          const completeWithTeamProfit = completeList.map(entry => {
+            const teamKey = entry.game.teamOfInterest || entry.game.homeTeam || entry.game.awayTeam || 'Unknown';
+            return { ...entry, teamAggregatedProfit: (typeof teamProfitMap[teamKey] === 'number' ? teamProfitMap[teamKey] : null) };
+          });
+
+          setAllGamesWithBetting(completeWithTeamProfit);
         } catch (e) {
           console.error('DEBUG BettingAnalysis: error creating completeGameList', e);
           setAllGamesWithBetting([]);
@@ -293,7 +337,7 @@ export default function BettingAnalysis({ teamName, games, showEmptyGamesTable =
     }
 
     calculateBettingHistory();
-  }, [teamName, games, showEmptyGamesTable, forceFutureGames]);
+  }, [teamName, games, showEmptyGamesTable, forceFutureGames, isSingleTeamView]);
 
   if (loading) {
     return (
@@ -325,7 +369,7 @@ export default function BettingAnalysis({ teamName, games, showEmptyGamesTable =
       borderRadius: '8px',
       overflow: 'hidden'
     }}>
-      <BettingSummary bettingState={bettingState} />
+      {showSummary && <BettingSummary bettingState={bettingState} />}
 
       {allGamesWithBetting.length > 0 && (
         <BettingTable
@@ -335,6 +379,9 @@ export default function BettingAnalysis({ teamName, games, showEmptyGamesTable =
           hideResultColumn={hideResultColumn}
           showStatusColumn={showStatusColumn}
           showTeamColumn={showTeamColumn}
+          showProfitColumn={showProfitColumn}
+          allowEditExistingOdds={allowEditExistingOdds}
+          isSingleTeamView={isSingleTeamView}
         />
       )}
 

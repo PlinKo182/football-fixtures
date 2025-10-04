@@ -25,7 +25,10 @@ export default function BettingTable({
   showTimeColumn,
   hideResultColumn,
   showStatusColumn,
-  showTeamColumn
+  showTeamColumn,
+  allowEditExistingOdds = true,
+  showProfitColumn = false,
+  isSingleTeamView = false
 }) {
   if (!entries || entries.length === 0) return null;
 
@@ -38,12 +41,13 @@ export default function BettingTable({
             <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '600' }}>DATE</th>
             {showTimeColumn && <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '600' }}>TIME</th>}
             <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '600' }}>MATCH</th>
-            {!hideResultColumn && <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '600' }}>Result</th>}
-            <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '600' }}>Seq#</th>
-            <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '600' }}>Bet</th>
-            <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '600' }}>Odds</th>
+            {!hideResultColumn && <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '600' }}>RESULT</th>}
+            <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '600' }}>SEQ#</th>
+            <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '600' }}>BET</th>
+            <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '600' }}>ODDS</th>
             {showStatusColumn && <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '600' }}>Status</th>}
             {!showTeamColumnLeft && showTeamColumn && <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '600' }}>Team</th>}
+            {showProfitColumn && <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '600' }}>PROFIT/LOSS</th>}
             <th style={{ padding: '12px 8px', textAlign: 'right', fontWeight: '600' }}>INVESTED</th>
           </tr>
         </thead>
@@ -102,8 +106,14 @@ export default function BettingTable({
                   awayTeam={entry.game.awayTeam}
                   date={entry.game.date}
                   currentOdds={typeof entry.game.drawOdds === 'number' ? entry.game.drawOdds : (entry.game.customOdds?.draw ?? null)}
+                  editable={ (entry.game.drawOdds === null || entry.game.drawOdds === undefined) || allowEditExistingOdds }
                   onOddsUpdate={(newOdds) => {
-                    // Local UI update handled by parent; this is just to keep component API consistent
+                    // Update entries locally so UI reflects change immediately
+                    try {
+                      entries[index].game.drawOdds = newOdds;
+                    } catch(e) {
+                      // ignore; entries may be immutable in some contexts
+                    }
                     console.log('Odds atualizadas (UI):', entry.game._id, newOdds);
                   }}
                 />
@@ -122,6 +132,40 @@ export default function BettingTable({
                   ) : (
                     <span style={{ color: 'var(--color-text-secondary)' }}>-</span>
                   )}
+                </td>
+              )}
+
+              {showProfitColumn && (
+                <td style={{ padding: '8px', textAlign: 'center', fontSize: '12px', fontWeight: '600' }}>
+                  {(() => {
+                    // Selection strategy:
+                    // - For multi-team views (homepage) prefer the per-team aggregated profit
+                    //   (computed by BettingAnalysis) or the game.bettingState.totalProfit if present.
+                    // - For single-team views (team page) prefer the per-row runningTotal.
+                    // Fallback to whichever value is available.
+                    let value = null;
+                    if (!isSingleTeamView) {
+                      if (typeof entry.teamAggregatedProfit === 'number') {
+                        value = entry.teamAggregatedProfit;
+                      } else if (typeof entry.game?.bettingState?.totalProfit === 'number') {
+                        value = entry.game.bettingState.totalProfit;
+                      } else if (typeof entry.runningTotal === 'number') {
+                        value = entry.runningTotal;
+                      }
+                    } else {
+                      if (typeof entry.runningTotal === 'number') {
+                        value = entry.runningTotal;
+                      } else if (typeof entry.game?.bettingState?.totalProfit === 'number') {
+                        value = entry.game.bettingState.totalProfit;
+                      } else if (typeof entry.teamAggregatedProfit === 'number') {
+                        value = entry.teamAggregatedProfit;
+                      }
+                    }
+                    if (value === null || value === undefined) return <span style={{ color: 'var(--color-text-secondary)' }}>—</span>;
+                    const formatted = `${value < 0 ? '-' : ''}${formatCurrency(Math.abs(value))}`;
+                    const color = value > 0 ? 'var(--color-success)' : value < 0 ? 'var(--color-error)' : 'var(--color-text-primary)';
+                    return <span style={{ color }}>{formatted}</span>;
+                  })()}
                 </td>
               )}
 

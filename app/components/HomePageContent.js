@@ -6,7 +6,7 @@ import MatchesTableSurface from '../components/MatchesTableSurface';
 import BettingAnalysis from './BettingAnalysis';
 import HomeBettingSurface from './HomeBettingSurface';
 import AutoDataLoader from './AutoDataLoader';
-import ImportHistoricalButton from './ImportHistoricalButton';
+// historical import button removed per user request
 import PageHeaderCompact from './PageHeaderCompact';
 import SectionHeader from './SectionHeader';
 
@@ -170,32 +170,12 @@ export default async function HomePageContent() {
           </div>
         )}
         
-        {hasData && (
-          <div className="mb-8">
-            <ImportHistoricalButton />
-          </div>
-        )}
+        {/* historical import button removed per user request */}
 
-        {upcomingGames.length > 0 && (
-          <div style={{ background: 'var(--color-accent-light)', border: '1px solid var(--color-accent)', borderRadius: '8px', padding: '16px', margin: '24px 0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '16px', marginRight: '8px' }}>🎯</span>
-              <h3 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--color-accent-dark)', margin: '0' }}>
-                Martingale Betting System
-              </h3>
-            </div>
-            <p style={{ fontSize: '13px', color: 'var(--color-accent-dark)', margin: '0', lineHeight: '1.4' }}>
-              Click ⚡ next to any match to start betting on draws. System starts at €0.10, doubles on loss, resets on draw win. 
-              Odds default to 3.0. Each successful sequence yields €0.20 profit.
-            </p>
-          </div>
-        )}
+        {/* Martingale banner removed per user request */}
 
         <div className="matches-container" style={{ marginBottom: '32px' }}>
-          {upcomingGames.length > 0 && (
-            <HomeBettingSurface games={upcomingGames} />
-          )}
-          <SectionHeader title={`🎯 Martingale Betting Analysis`} rightContent={upcomingGames.length > 0 ? `${upcomingGames.length} matches` : null} />
+          {/* Top summary and section header removed on homepage per user request */}
           {upcomingGames.length > 0 ? (
             (() => {
               const converted = upcomingGames.map((g, i) => ({
@@ -208,13 +188,14 @@ export default async function HomePageContent() {
                 homeScore: null,
                 awayScore: null,
                 season: '2025-26',
-                hasOdds: false,
-                drawOdds: null,
+                // Preserve odds coming from Apostas (if present)
+                hasOdds: (typeof g.drawOdds === 'number') || !!g.hasOdds,
+                drawOdds: (typeof g.drawOdds === 'number') ? g.drawOdds : (g.drawOdds ?? null),
                 teamOfInterest: g.teamOfInterest || null,
                 bettingState: g.bettingState || null,
                 isHome: null
               }));
-              return (<BettingAnalysis teamName={"Upcoming"} games={converted} showEmptyGamesTable={true} showTeamColumn={true} showTeamColumnLeft={true} showTimeColumn={true} hideResultColumn={true} forceFutureGames={true} />);
+              return (<BettingAnalysis teamName={"Upcoming"} games={converted} showEmptyGamesTable={true} showTeamColumn={true} showTeamColumnLeft={true} showTimeColumn={true} hideResultColumn={true} forceFutureGames={true} showSummary={false} allowEditExistingOdds={false} showProfitColumn={true} />);
             })()
           ) : (
             <div style={{ padding: '60px', textAlign: 'center', background: 'var(--color-surface)', border: '1px solid var(--color-border-light)', borderRadius: '8px' }}>
