@@ -21,7 +21,7 @@
 - **Método**: POST
 - **Parâmetros**: `teamName`, `opponent`, `drawOdds` (1.01-50.0)
 - **Funcionalidade**: Migração automática Empates → Apostas
-- **Proteção**: Odds ficam protegidas contra atualizações SportRadar
+	**Proteção**: Odds ficam protegidas contra atualizações SportRadar
 
 ### 3. `/api/edit-odds` ✅ IMPLEMENTADA  
 - **Propósito**: Editar odds existentes na base Apostas
@@ -32,7 +32,7 @@
 
 ## 🗄️ Arquitectura de Bases de Dados
 
-```
+```text
 EMPATES (SportRadar)          APOSTAS (Protegida)
 ├── La Liga 2025-26          ├── La Liga 2024-25 (migrado)
 ├── Ligue 1 2025-26          ├── Jogos com odds definidas
@@ -55,13 +55,13 @@ EMPATES (SportRadar)          APOSTAS (Protegida)
 - Dados históricos preservados (Bétis: 77 jogos total)
 - Sistema dual funcionando (Empates + Apostas)
 
-### ✅ APIs REST
+- ### ✅ APIs REST
 - Endpoints criados e compilados sem erros
 - Parâmetros validados (teamName aceita acentos)
 - Conexões às bases de dados estabelecidas
 - Logs de debug funcionais
 
-### ✅ Sistema de Migração
+- ### ✅ Sistema de Migração
 - 116 jogos migrados com sucesso (La Liga 2024-25)
 - drawOdds calculadas automaticamente por força das equipas
 - Estrutura de dados preservada completamente
@@ -81,4 +81,5 @@ O sistema dual está funcionando corretamente:
 - ✅ Separação clara entre dados correntes e históricos
 - ✅ APIs REST prontas para integração frontend
 
-**Status Geral: 🟢 SISTEMA OPERACIONAL**
+### Status Geral: 🟢 SISTEMA OPERACIONAL
+
