@@ -28,7 +28,7 @@ export default async function TeamPage({ params }) {
     notFound();
   }
 
-  // Convert to expected format (minimum necessary) including season
+  // Convert to expected format (minimum necessary) including season AND ODDS
   const games = teamData.games.map(game => ({
     _id: `${teamName}-${game.sportRadarId || Math.random()}`,
     league: teamData.league,
@@ -43,8 +43,28 @@ export default async function TeamPage({ params }) {
     awayScore: game.awayScore !== null && game.awayScore !== undefined ? 
                game.awayScore : 
                (game.isHome ? game.opponentScore : game.teamScore),
-    season: game.season || '2025-26' // Fallback to current season
+    season: game.season || '2025-26', // Fallback to current season
+    // 🎯 CRUCIAL: Preserve odds properties
+    hasOdds: game.hasOdds || false,
+    drawOdds: game.drawOdds,
+    // Keep original data for debugging
+    opponent: game.opponent,
+    isHome: game.isHome
   }));
+
+  // 🔍 DEBUG: Log games with odds after conversion
+  const gamesWithOddsAfterConversion = games.filter(g => g.hasOdds);
+  console.log(`🎯 PAGE.JS - Após conversão: ${gamesWithOddsAfterConversion.length} jogos com odds`);
+  if (gamesWithOddsAfterConversion.length > 0) {
+    console.log('🎯 PAGE.JS - Primeiro jogo com odds após conversão:', {
+      homeTeam: gamesWithOddsAfterConversion[0].homeTeam,
+      awayTeam: gamesWithOddsAfterConversion[0].awayTeam,
+      hasOdds: gamesWithOddsAfterConversion[0].hasOdds,
+      drawOdds: gamesWithOddsAfterConversion[0].drawOdds,
+      opponent: gamesWithOddsAfterConversion[0].opponent,
+      date: gamesWithOddsAfterConversion[0].date
+    });
+  }
 
   // Separate games by season
   const currentSeasonGames = games.filter(game => game.season === '2025-26');

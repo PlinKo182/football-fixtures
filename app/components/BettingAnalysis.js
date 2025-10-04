@@ -1,133 +1,7 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from 'react';
-
-// Componente para editar odds inline
-function EditableOdds({ gameId, homeTeam, awayTeam, date, currentOdds, onOddsUpdate }) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [odds, setOdds] = useState(currentOdds);
-  const [saving, setSaving] = useState(false);
-
-  const handleSave = async () => {
-    if (odds === currentOdds) {
-      setIsEditing(false);
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const response = await fetch('/api/odds/update', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          gameId,
-          homeTeam,
-          awayTeam,
-          date,
-          drawOdds: odds
-        }),
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        onOddsUpdate(odds);
-        setIsEditing(false);
-      } else {
-        console.error('Erro ao salvar odds:', result.error);
-        setOdds(currentOdds); // Revert
-      }
-    } catch (error) {
-      console.error('Erro ao salvar odds:', error);
-      setOdds(currentOdds); // Revert
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleCancel = () => {
-    setOdds(currentOdds);
-    setIsEditing(false);
-  };
-
-  if (isEditing) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-        <input
-          type="number"
-          value={odds}
-          onChange={(e) => setOdds(parseFloat(e.target.value) || 0)}
-          step="0.1"
-          min="1.0"
-          max="10.0"
-          style={{
-            width: '50px',
-            padding: '2px 4px',
-            fontSize: '11px',
-            border: '1px solid var(--color-accent)',
-            borderRadius: '3px',
-            textAlign: 'center'
-          }}
-          disabled={saving}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSave();
-            if (e.key === 'Escape') handleCancel();
-          }}
-          autoFocus
-        />
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          style={{
-            fontSize: '10px',
-            padding: '1px 4px',
-            background: 'var(--color-success)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '2px',
-            cursor: 'pointer'
-          }}
-        >
-          {saving ? '...' : '✓'}
-        </button>
-        <button
-          onClick={handleCancel}
-          disabled={saving}
-          style={{
-            fontSize: '10px',
-            padding: '1px 4px',
-            background: 'var(--color-error)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '2px',
-            cursor: 'pointer'
-          }}
-        >
-          ✕
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <span
-      style={{
-        cursor: 'pointer',
-        padding: '2px 4px',
-        borderRadius: '3px',
-        transition: 'background 0.2s'
-      }}
-      onClick={() => setIsEditing(true)}
-      onMouseEnter={(e) => e.target.style.background = 'var(--color-accent-light)'}
-      onMouseLeave={(e) => e.target.style.background = 'transparent'}
-      title="Click to edit odds"
-    >
-      {currentOdds.toFixed(1)}
-    </span>
-  );
-}
+import EditableOdds from './EditableOdds';
 
 const MARTINGALE_PROGRESSION = [
   0.10, 0.18, 0.32, 0.57, 1.02, 1.78, 3.11, 5.43, 9.47, 16.52,
@@ -180,13 +54,17 @@ function createCompleteGameList(games, history) {
       gameStatus = 'CANCELLED';
     }
     
-    const gameOdds = game.customOdds?.draw || 3.0;
+  // If drawOdds is explicitly null (pending/scheduled), keep it null so UI shows blank
+  const gameOdds = (typeof game.drawOdds === 'number') ? game.drawOdds : (game.customOdds?.draw || 3.0);
     
     let gameEntry = {
       game,
       sequence: sequenceCounter,
       betAmount,
-      odds: gameOdds,
+      // Numeric odds for calculations
+      odds: (typeof game.drawOdds === 'number') ? game.drawOdds : gameOdds,
+      // Formatted odds string for display (pt-PT, two decimals)
+      displayOdds: (typeof game.drawOdds === 'number' ? Number(game.drawOdds) : Number(gameOdds)).toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
       isPast,
       isPostponed,
       gameStatus,
@@ -285,23 +163,26 @@ export default function BettingAnalysis({ teamName, games }) {
           const isDraw = game.homeScore === game.awayScore;
           const betAmount = MARTINGALE_PROGRESSION[Math.min(currentSequence - 1, MARTINGALE_PROGRESSION.length - 1)];
           const sequenceInvested = currentSequence > 1 ? calculateTotalInvested(currentSequence - 1) : 0.00;
-          
+
+          // Determine the odds to use for this finished game: prefer drawOdds, then customOdds, then fallback 3.0
+          const gameOdds = (typeof game.drawOdds === 'number') ? game.drawOdds : (game.customOdds?.draw || 3.0);
+
           if (isDraw) {
-            // Win! Calculate profit for this sequence and reset
-            const sequenceProfit = calculateProfitIfWin(currentSequence, 3.0);
+            // Win! Calculate profit for this sequence and reset using actual game odds
+            const sequenceProfit = calculateProfitIfWin(currentSequence, gameOdds);
             totalProfit += sequenceProfit;
-            
+
             history.push({
               game,
               sequence: currentSequence,
               betAmount,
-              odds: 3.0,
+              odds: gameOdds,
               result: 'WIN',
               profit: sequenceProfit,
               sequenceInvested: sequenceInvested + betAmount,
               isDraw: true
             });
-            
+
             // Reset for next sequence
             currentSequence = 1;
           } else {
@@ -310,13 +191,13 @@ export default function BettingAnalysis({ teamName, games }) {
               game,
               sequence: currentSequence,
               betAmount,
-              odds: 3.0,
+              odds: gameOdds,
               result: 'LOSS',
               profit: 0,
               sequenceInvested: sequenceInvested + betAmount,
               isDraw: false
             });
-            
+
             currentSequence = Math.min(currentSequence + 1, MARTINGALE_PROGRESSION.length);
           }
         }
@@ -324,7 +205,11 @@ export default function BettingAnalysis({ teamName, games }) {
         // Calculate current state
         const nextBetAmount = MARTINGALE_PROGRESSION[Math.min(currentSequence - 1, MARTINGALE_PROGRESSION.length - 1)];
         const sequenceInvested = currentSequence > 1 ? calculateTotalInvested(currentSequence - 1) : 0.00;
-        const potentialProfit = calculateProfitIfWin(currentSequence, 3.0);
+        // Use average odds from finished games to estimate potential profit
+        const averageOdds = finishedGames.length > 0 ?
+          finishedGames.reduce((sum, g) => sum + ((typeof g.drawOdds === 'number') ? g.drawOdds : (g.customOdds?.draw || 3.0)), 0) / finishedGames.length
+          : 3.0;
+        const potentialProfit = calculateProfitIfWin(currentSequence, averageOdds);
 
         setBettingState({
           teamName,
@@ -494,10 +379,34 @@ export default function BettingAnalysis({ teamName, games }) {
                       homeTeam={entry.game.homeTeam}
                       awayTeam={entry.game.awayTeam}
                       date={entry.game.date}
-                      currentOdds={entry.game.customOdds?.draw || 3.0}
+                      // If drawOdds is explicitly null (pending), pass null so editor shows blank
+                      currentOdds={typeof entry.game.drawOdds === 'number' ? entry.game.drawOdds : (entry.game.customOdds?.draw ?? null)}
                       onOddsUpdate={(newOdds) => {
-                        // Callback para atualizar a UI se necessário
-                        console.log('Odds atualizadas:', newOdds);
+                        // Atualizar o estado local para refletir a nova odd imediatamente
+                        setAllGamesWithBetting(prev => prev.map(g => {
+                          try {
+                            if (!g.game) return g;
+                            const dateMatch = new Date(g.game.date).toISOString() === new Date(entry.game.date).toISOString();
+                            const opponentMatch = (g.game.opponent || g.game.awayTeam) === (entry.game.opponent || entry.game.awayTeam);
+                            const isHomeMatch = !!g.game.isHome === !!entry.game.isHome;
+
+                            if (dateMatch && opponentMatch && isHomeMatch) {
+                              return {
+                                ...g,
+                                game: {
+                                  ...g.game,
+                                  drawOdds: newOdds,
+                                  hasOdds: true
+                                }
+                              };
+                            }
+                          } catch (e) {
+                            return g;
+                          }
+                          return g;
+                        }));
+                        // Também logar para debug
+                        console.log('Odds atualizadas (UI):', entry.game._id, newOdds);
                       }}
                     />
                   </td>

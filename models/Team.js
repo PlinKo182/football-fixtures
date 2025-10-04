@@ -6,6 +6,11 @@ const GameSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  // Odds for a draw (Apostas database / protected field)
+  drawOdds: {
+    type: Number,
+    default: null
+  },
   isHome: {
     type: Boolean,
     required: true

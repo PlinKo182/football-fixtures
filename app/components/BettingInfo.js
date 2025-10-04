@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from 'react';
 import { formatCurrency, getSequenceStatusColor } from '@/hooks/useBettingSequences';
+// EditableOdds removed from quick actions to simplify UI
 
 export default function BettingInfo({ 
   gameId, 
@@ -12,6 +13,7 @@ export default function BettingInfo({
   gameResult = null,
   compact = false,
   bettingState: providedBettingState = null 
+  , drawOdds = null
 }) {
   const [showActions, setShowActions] = useState(false);
   const [odds, setOdds] = useState(3.0);
@@ -136,59 +138,7 @@ export default function BettingInfo({
         </div>
       </div>
       
-      {/* Quick actions */}
-      <div className="betting-actions">
-        <button 
-          className="betting-action-btn"
-          onClick={() => setShowActions(!showActions)}
-          disabled={loading}
-        >
-          ⚡
-        </button>
-        
-        {showActions && (
-          <div className="betting-dropdown">
-            <div className="odds-input">
-              <label>Odds:</label>
-              <input
-                type="number"
-                value={odds}
-                onChange={(e) => setOdds(parseFloat(e.target.value) || 3.0)}
-                min="1.1"
-                max="10"
-                step="0.1"
-              />
-            </div>
-            
-            <div className="action-buttons">
-              <button 
-                className="btn-bet"
-                onClick={handlePlaceBet}
-                disabled={loading}
-              >
-                Bet {formatCurrency(bettingState.nextBetAmount)}
-              </button>
-              
-              <div className="result-buttons">
-                <button 
-                  className="btn-result btn-draw"
-                  onClick={() => handleResult('draw')}
-                  disabled={loading}
-                >
-                  Draw
-                </button>
-                <button 
-                  className="btn-result btn-loss"
-                  onClick={() => handleResult('loss')}
-                  disabled={loading}
-                >
-                  Loss
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      {/* Quick actions removed to simplify UI (placed odds editing on match card) */}
     </div>
   );
 }

@@ -342,7 +342,24 @@ body {
   border-color: #fed7aa;
 }
 
+/* Odds indicator */
+.odds-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #f0f9ff;
+  color: #0369a1;
+  border: 1px solid #93c5fd;
+  cursor: help;
+  transition: all 0.2s ease;
+}
 
+.odds-badge:hover {
+  background: #dbeafe;
+  border-color: #60a5fa;
+}
 
 /* Team focus indicator */
 .team-focus {
