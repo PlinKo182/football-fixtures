@@ -198,6 +198,13 @@ export async function POST(request) {
     
   // Adicionar odds ao jogo (pode ser null para remover odd em jogos agendados)
   targetGame.drawOdds = oddsValue;
+    // Persistir a alteração na base Empates para que a fonte primária reflita a mudança
+    try {
+      await team.save();
+      console.log('💾 Alteração gravada na base Empates');
+    } catch (e) {
+      console.warn('⚠️ Falha ao gravar na base Empates, prosseguindo com migração para Apostas', e);
+    }
     
     // MIGRAÇÃO IMEDIATA: Mover para base Apostas
     const ApostasTeam = apostasConnection.model(modelName, TeamSchema);
@@ -238,6 +245,10 @@ export async function POST(request) {
         { $set: { 'games.$[elem].drawOdds': oddsValue } },
         { arrayFilters: [ { 'elem.opponent': targetGame.opponent, 'elem.isHome': targetGame.isHome } ] }
       );
+      // Re-load apostasTeam to confirm update
+      apostasTeam = await ApostasTeam.findOne({ teamName: apostasTeam.teamName });
+      const updatedGame = apostasTeam.games.find(g => g.opponent === targetGame.opponent && g.isHome === targetGame.isHome && Math.abs(new Date(g.date) - new Date(targetGame.date)) < 24*60*60*1000);
+      console.log('🔎 Jogo na Apostas após update:', updatedGame ? { date: updatedGame.date, drawOdds: updatedGame.drawOdds } : 'Não encontrado');
     } else {
       // Adicionar novo jogo
       apostasTeam.games.push(targetGame);

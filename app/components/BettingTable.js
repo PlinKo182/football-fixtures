@@ -25,8 +25,8 @@ function parseNumericCandidate(v) {
 }
 
 const MARTINGALE_PROGRESSION = [
-  0.10, 0.18, 0.32, 0.57, 1.02, 1.78, 3.11, 5.43, 9.47, 16.52,
-  28.08, 49.32, 86.31, 150.73, 263.28, 460.24, 804.42, 1407.73, 2463.52, 2000.00
+  0.10, 0.17, 0.28, 0.48, 0.80, 1.35, 2.28, 3.84, 6.47, 10.90,
+  18.35, 30.91, 52.05, 87.66, 147.63, 248.63, 418.72, 705.16, 1187.57, 2000.00
 ];
 
 function calculateTotalInvested(sequenceNumber) {
@@ -148,6 +148,7 @@ export default function BettingTable({
                   date={entry.game.date}
                   currentOdds={typeof entry.game.drawOdds === 'number' ? entry.game.drawOdds : (entry.game.customOdds?.draw ?? null)}
                   editable={ (entry.game.drawOdds === null || entry.game.drawOdds === undefined) || allowEditExistingOdds }
+                  teamPage={isSingleTeamView}
                   onOddsUpdate={(newOdds) => {
                     // Update entries locally so UI reflects change immediately
                     try {

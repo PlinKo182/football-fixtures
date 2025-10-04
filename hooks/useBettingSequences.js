@@ -144,8 +144,8 @@ export function getSequenceStatusColor(sequence) {
 // Helper function to get next bet info
 export function getNextBetInfo(currentSequence) {
   const progression = [
-    0.10, 0.18, 0.32, 0.57, 1.02, 1.78, 3.11, 5.43, 9.47, 16.52,
-    28.08, 47.32, 79.74, 131.57, 217.09, 358.19, 573.11, 879.72, 1332.77, 2000.00
+    0.10, 0.17, 0.28, 0.48, 0.80, 1.35, 2.28, 3.84, 6.47, 10.90,
+    18.35, 30.91, 52.05, 87.66, 147.63, 248.63, 418.72, 705.16, 1187.57, 2000.00
   ];
   
   const index = Math.min(currentSequence - 1, progression.length - 1);

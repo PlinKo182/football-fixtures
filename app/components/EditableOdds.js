@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-export default function EditableOdds({ gameId, homeTeam, awayTeam, date, currentOdds, onOddsUpdate, editable = true }) {
+export default function EditableOdds({ gameId, homeTeam, awayTeam, date, currentOdds, onOddsUpdate, editable = true, teamPage = false }) {
   const [isEditing, setIsEditing] = useState(false);
   const [odds, setOdds] = useState(currentOdds);
   const [displayOdds, setDisplayOdds] = useState(currentOdds);
@@ -40,26 +40,58 @@ export default function EditableOdds({ gameId, homeTeam, awayTeam, date, current
 
     setSaving(true);
     try {
-      const response = await fetch('/api/odds/update', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          gameId,
-          homeTeam,
-          awayTeam,
-          date,
-          drawOdds: odds === null || odds === undefined ? null : odds
-        }),
-      });
+      let response, result;
+      if (teamPage) {
+        // On team page, use the edit endpoint (PUT) to persist in Apostas DB
+        response = await fetch('/api/edit-odds', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ homeTeam, awayTeam, date, drawOdds: odds })
+        });
+        result = await response.json();
+      } else {
+        // Default behaviour: use the general odds update (dual-system migration)
+        response = await fetch('/api/odds/update', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            gameId,
+            homeTeam,
+            awayTeam,
+            date,
+            drawOdds: odds === null || odds === undefined ? null : odds
+          }),
+        });
+        result = await response.json();
+      }
 
-      const result = await response.json();
-      if (result.success) {
+      if (result && result.success) {
         // keep optimistic state
         setIsEditing(false);
       } else {
-        console.error('Erro ao salvar odds:', result.error);
+        // If edit-odds suggests using /api/set-odds (game missing), try fallback
+        const errMsg = result?.error || '';
+        if (teamPage && errMsg.includes('Use /api/set-odds')) {
+          try {
+            const fallbackResp = await fetch('/api/odds/update', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ gameId, homeTeam, awayTeam, date, drawOdds: odds === null || odds === undefined ? null : odds })
+            });
+            const fallbackResult = await fallbackResp.json();
+            if (fallbackResult && fallbackResult.success) {
+              setIsEditing(false);
+              return;
+            }
+            console.error('Fallback também falhou:', fallbackResult?.error || 'Resposta inválida');
+          } catch (fe) {
+            console.error('Erro no fallback para /api/odds/update:', fe);
+          }
+        }
+
+        console.error('Erro ao salvar odds:', errMsg || 'Resposta inválida');
         // revert optimistic changes
         setDisplayOdds(previousDisplay);
         setInputText(previousInputText);

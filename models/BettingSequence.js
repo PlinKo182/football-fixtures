@@ -61,8 +61,8 @@ const BettingSequenceSchema = new mongoose.Schema({
 
 // Martingale progression values - exact sequence from your spreadsheet
 const MARTINGALE_PROGRESSION = [
-  0.10, 0.18, 0.32, 0.57, 1.02, 1.78, 3.11, 5.43, 9.47, 16.52,
-  28.08, 49.32, 86.31, 150.73, 263.28, 460.24, 804.42, 1407.73, 2463.52, 2000.00
+  0.10, 0.17, 0.28, 0.48, 0.80, 1.35, 2.28, 3.84, 6.47, 10.90,
+  18.35, 30.91, 52.05, 87.66, 147.63, 248.63, 418.72, 705.16, 1187.57, 2000.00
 ];
 
 // Calculate next bet amount based on sequence
@@ -82,10 +82,10 @@ BettingSequenceSchema.methods.calculateTotalInvested = function() {
 
 // Calculate potential profit if draw occurs
 BettingSequenceSchema.methods.calculatePotentialProfit = function() {
-  const totalInvested = this.calculateTotalInvested();
+  // Potential profit for the current bet = stake * (odds - 1)
   const currentBet = this.calculateNextBet();
-  const winnings = currentBet * this.defaultOdds;
-  return Math.round((winnings - totalInvested) * 100) / 100;
+  const net = currentBet * (this.defaultOdds - 1);
+  return Math.round(net * 100) / 100;
 };
 
 // Reset sequence after draw

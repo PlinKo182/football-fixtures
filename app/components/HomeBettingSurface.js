@@ -9,7 +9,7 @@ export default function HomeBettingSurface({ games }) {
 
   // derive a simple aggregate for nextBet and totalProfit from available bettingState
   const bettingStates = games.map(g => g.bettingState).filter(Boolean);
-  const nextBet = bettingStates.length > 0 ? bettingStates[0].nextBet : 0.18;
+  const nextBet = bettingStates.length > 0 ? bettingStates[0].nextBet : 0.10;
   const totalProfit = bettingStates.reduce((s, b) => s + (b?.totalProfit || 0), 0).toFixed(2);
   const invested = bettingStates.length > 0 ? -0.10 : 0.00;
   const potentialProfit = bettingStates.length > 0 ? 0.30 : 0.00;

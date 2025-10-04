@@ -6,8 +6,8 @@ import BettingSummary from './BettingSummary';
 import BettingTable from './BettingTable';
 
 const MARTINGALE_PROGRESSION = [
-  0.10, 0.18, 0.32, 0.57, 1.02, 1.78, 3.11, 5.43, 9.47, 16.52,
-  28.08, 49.32, 86.31, 150.73, 263.28, 460.24, 804.42, 1407.73, 2463.52, 2000.00
+  0.10, 0.17, 0.28, 0.48, 0.80, 1.35, 2.28, 3.84, 6.47, 10.90,
+  18.35, 30.91, 52.05, 87.66, 147.63, 248.63, 418.72, 705.16, 1187.57, 2000.00
 ];
 
 function formatCurrency(amount) {
@@ -23,10 +23,10 @@ function calculateTotalInvested(sequenceNumber) {
 }
 
 function calculateProfitIfWin(sequenceNumber, odds = 3.0) {
+  // Per-game net profit if the bet at this sequence wins: stake * (odds - 1)
   const betAmount = MARTINGALE_PROGRESSION[Math.min(sequenceNumber - 1, MARTINGALE_PROGRESSION.length - 1)];
-  const winnings = betAmount * odds;
-  const totalInvested = calculateTotalInvested(sequenceNumber);
-  return Math.round((winnings - totalInvested) * 100) / 100;
+  const net = betAmount * (odds - 1);
+  return Math.round(net * 100) / 100;
 }
 
 function createCompleteGameList(games, history, opts = {}) {
@@ -96,10 +96,12 @@ function createCompleteGameList(games, history, opts = {}) {
         const entrySequence = typeof historyEntry.sequence === 'number' ? historyEntry.sequence : sequenceCounter;
 
         if (historyEntry.isDraw) {
-          // WIN - set runningTotal to the raw profit of this sequence (replace)
-          // according to the requested behaviour: the displayed total after a
-          // winning sequence should be the profit for that sequence.
-          runningTotal = (typeof historyEntry.profitRaw === 'number' ? historyEntry.profitRaw : (typeof historyEntry.profit === 'number' ? historyEntry.profit : calculateProfitIfWin(entrySequence, gameOdds)));
+          // WIN - use per-game net profit = bet * (odds - 1)
+          // Add this net profit to the cumulative running total (not replace)
+          const betForEntry = MARTINGALE_PROGRESSION[Math.min(Math.max(entrySequence - 1, 0), MARTINGALE_PROGRESSION.length - 1)];
+          const computedProfitRaw = betForEntry * (gameOdds - 1);
+          const winProfit = (typeof historyEntry.profitRaw === 'number' ? historyEntry.profitRaw : (typeof historyEntry.profit === 'number' ? historyEntry.profit : computedProfitRaw));
+          runningTotal += winProfit;
 
           // Reset sequence for next betting series
           sequenceCounter = 1;
@@ -204,10 +206,9 @@ export default function BettingAnalysis({ teamName, games, showEmptyGamesTable =
           const gameOdds = (typeof game.drawOdds === 'number') ? game.drawOdds : (game.customOdds?.draw || 3.0);
 
           if (isDraw) {
-            // Win! Calculate profit for this sequence using actual game odds
-            const totalInvestedForSeq = calculateTotalInvested(currentSequence);
-            const rawSequenceProfit = (betAmount * gameOdds) - totalInvestedForSeq;
-            const sequenceProfit = Math.round(rawSequenceProfit * 100) / 100; // rounded for display
+            // Win! Use per-game net profit = bet * (odds - 1)
+            const profitRaw = betAmount * (gameOdds - 1);
+            const sequenceProfit = Math.round(profitRaw * 100) / 100; // rounded for display
             totalProfit += sequenceProfit;
 
             history.push({
@@ -217,7 +218,7 @@ export default function BettingAnalysis({ teamName, games, showEmptyGamesTable =
               odds: gameOdds,
               result: 'WIN',
               profit: sequenceProfit,
-              profitRaw: rawSequenceProfit,
+              profitRaw: profitRaw,
               sequenceInvested: sequenceInvested + betAmount,
               isDraw: true
             });
@@ -302,10 +303,9 @@ export default function BettingAnalysis({ teamName, games, showEmptyGamesTable =
               const gameOdds = (typeof g.drawOdds === 'number') ? g.drawOdds : (g.customOdds?.draw || 3.0);
               const betAmount = MARTINGALE_PROGRESSION[Math.min(currentSequenceForTeam - 1, MARTINGALE_PROGRESSION.length - 1)];
               if (isDraw) {
-                const totalInvestedForSeq = calculateTotalInvested(currentSequenceForTeam);
-                const rawSequenceProfit = (betAmount * gameOdds) - totalInvestedForSeq;
-                const sequenceProfit = Math.round(rawSequenceProfit * 100) / 100;
-                historyForTeam.push({ game: g, sequence: currentSequenceForTeam, betAmount, odds: gameOdds, result: 'WIN', profit: sequenceProfit, profitRaw: rawSequenceProfit, sequenceInvested: totalInvestedForSeq });
+                const profitRaw = betAmount * (gameOdds - 1);
+                const sequenceProfit = Math.round(profitRaw * 100) / 100;
+                historyForTeam.push({ game: g, sequence: currentSequenceForTeam, betAmount, odds: gameOdds, result: 'WIN', profit: sequenceProfit, profitRaw: profitRaw, sequenceInvested: calculateTotalInvested(currentSequenceForTeam) + betAmount });
                 currentSequenceForTeam = 1;
               } else {
                 historyForTeam.push({ game: g, sequence: currentSequenceForTeam, betAmount, odds: gameOdds, result: 'LOSS', profit: -betAmount, profitRaw: -betAmount, sequenceInvested: calculateTotalInvested(currentSequenceForTeam) });

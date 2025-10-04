@@ -11,8 +11,8 @@ import PageHeaderCompact from './PageHeaderCompact';
 import SectionHeader from './SectionHeader';
 
 const MARTINGALE_PROGRESSION = [
-  0.10, 0.18, 0.32, 0.57, 1.02, 1.78, 3.11, 5.43, 9.47, 16.52,
-  28.08, 49.32, 86.31, 150.73, 263.28, 460.24, 804.42, 1407.73, 2463.52, 2000.00
+  0.10, 0.17, 0.28, 0.48, 0.80, 1.35, 2.28, 3.84, 6.47, 10.90,
+  18.35, 30.91, 52.05, 87.66, 147.63, 248.63, 418.72, 705.16, 1187.57, 2000.00
 ];
 
 async function calculateTeamBettingState(teamName) {
@@ -57,15 +57,10 @@ async function calculateTeamBettingState(teamName) {
       const isDraw = game.homeScore === game.awayScore;
       
       if (isDraw) {
-        // Win! Calculate profit and reset sequence
+        // Win! Per-game net profit = stake * (odds - 1)
         const betAmount = MARTINGALE_PROGRESSION[Math.min(currentSequence - 1, MARTINGALE_PROGRESSION.length - 1)];
         const odds = game.drawOdds || 3.0;
-        const winnings = betAmount * odds;
-        let totalInvested = 0;
-        for (let i = 0; i < currentSequence; i++) {
-          totalInvested += MARTINGALE_PROGRESSION[Math.min(i, MARTINGALE_PROGRESSION.length - 1)];
-        }
-        const sequenceProfit = winnings - totalInvested;
+        const sequenceProfit = betAmount * (odds - 1);
         totalProfit += sequenceProfit;
         currentSequence = 1; // Reset
       } else {

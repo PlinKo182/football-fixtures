@@ -1,4 +1,4 @@
-const MARTINGALE = [0.10, 0.18, 0.32, 0.57, 1.02, 1.78];
+const MARTINGALE = [0.10, 0.17, 0.28, 0.48, 0.80, 1.35, 2.28, 3.84, 6.47, 10.90, 18.35, 30.91, 52.05, 87.66, 147.63, 248.63, 418.72, 705.16, 1187.57, 2000.00];
 
 function calculateTotalInvested(sequenceNumber) {
   let total = 0;
@@ -23,16 +23,14 @@ function simulate(seqResults) {
       currentSequence = Math.min(currentSequence + 1, MARTINGALE.length);
     } else if (r.result === 'WIN') {
       const odds = r.odds || 3.0;
-      const totalInvested = calculateTotalInvested(currentSequence);
-      const profitRaw = (bet * odds) - totalInvested;
-      // user requested running to equal the sequence profit, not cumulative sum
-      // but we'll show both behaviours: cumulative and "sequence-as-total"
+      // Use per-game net profit = bet * (odds - 1)
+      const profitRaw = bet * (odds - 1);
       const rounded = Math.round(profitRaw * 100) / 100;
       rows.push({ sequence: currentSequence, bet, result: 'WIN', odds, profitRaw, rounded });
       // cumulative running
       running += profitRaw;
       rows[rows.length-1].runningCumulative = running;
-      // sequence-as-total
+      // sequence-as-total (same as profitRaw here)
       rows[rows.length-1].runningSequenceAsTotal = profitRaw;
       currentSequence = 1;
     }
